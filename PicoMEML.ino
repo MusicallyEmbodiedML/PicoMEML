@@ -11,6 +11,7 @@
 #include <vector>
 #include "pico/util/queue.h"
 #include "hardware/clocks.h"
+#include "pico/stdlib.h"
 
 static queue_t queue_audioparam;
 static queue_t queue_interface_pulse;
@@ -107,6 +108,9 @@ void AUDIO_FUNC(loop)() {
 }
 
 
+static bool _buttonsTimerCallback(struct repeating_timer *);
+
+
 void setup1() {
     // Init serial and signal other core
     if (waitForSerialOnStart){
@@ -127,12 +131,26 @@ void setup1() {
     while (!flag_init_0) {
         // Wait for other core
     };
+
+    // Set up timer for buttons
+    static struct repeating_timer adc_timer;
+    static const unsigned int adc_period_ms = 1;
+    add_repeating_timer_ms(
+        adc_period_ms,
+        _buttonsTimerCallback,
+        nullptr,
+        &adc_timer
+    );
 }
 
-void loop1() {
+bool _buttonsTimerCallback(__unused struct repeating_timer *) {
     // Read ADC
     ButtonsPots::Process();
 
+    return true;
+}
+
+void loop1() {
     static constexpr uint32_t period_ms = 1;
     // Pulse
 #if 1
