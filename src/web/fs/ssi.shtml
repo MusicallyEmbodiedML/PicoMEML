@@ -1,0 +1,10 @@
+{
+    "n_iterations": <!--#NITER-->,
+    "last_error": <!--#LERR-->,
+    "exploration_range": <!--#EXRG-->,
+    "app_id": <!--#APID-->,
+    "current_dataset": <!--#CDAT-->,
+    "current_model": <!--#CMOD-->,
+    "current_nn_mode": <!--#NNMD-->,
+    "current_expl_mode": <!--#EXMD-->
+}

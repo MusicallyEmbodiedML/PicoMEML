@@ -1,0 +1,373 @@
+
+<!DOCTYPE html>
+<html>
+  <head>
+
+    <script src="./NexusUI.min.js"></script>
+    <script src="./magic_grid.min.js"></script>
+
+    <style>
+      /* #container {
+        width:100%;
+        margin 0 auto;
+      } */
+      .container div {
+        width: 100%;
+        background-color: antiquewhite;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        border-radius: 8px;
+        
+      }
+      .ctrlpanel { width: 150px; margin:10px; border-color: rgb(222, 219, 231); border-width: 1px; border-style:solid; padding: 10px;}
+      #loss {background-color: green; padding: 4px;}
+      #resetModelButton, #clearDataButton, #trainButton {padding:20px;}
+      @media (min-width: 600px) {
+      #container {
+        width: 600px; /* Increase width for landscape mode */
+      }
+
+      .item {
+        font-size: 1.2rem; /* Scale text size */
+        padding: 25px;
+      }
+    }      
+    </style>
+
+  </head>
+  <body>
+
+    <div id="container">
+      <div id="modelCtrl" class="ctrlpanel">
+        <div>
+          Models
+          <div id="modelSelector"></div>
+        </div>
+        <div>
+          <div id="resetModelButton"></div>
+        </div>
+      </div>
+      <div id="dataCtrl" class="ctrlpanel">
+        <div>
+          Datasets
+          <div id="datasetSelector"></div>
+        </div>
+        <div>
+          <div id="clearDataButton"></div>
+        </div>
+      </div>
+      <div id="trainCtrl" class="ctrlpanel">
+        <div id="trainSelectorText">Inference--Training</div>
+        <div id="trainSelector"></div>
+        <!-- <div id="trainButton"></div> -->
+        Iterations <div id="numIterations"></div>
+        <div id="iterationsSlider"></div>
+        <div>Loss: <span id="loss">Loading...</span></div>
+      </div>
+      <div id="explorationCtrl" class="ctrlpanel">
+        Exploration
+        Range: <div id="rangeSlider"></div>
+        Mode:
+        <div id="exploModeSelect"></div>
+        App name: <i><span id="appName">[...waiting]</span></i>
+        <div id="customControls">
+          Pulse slider (Euclidean):
+          <div id="pulseSlider"></div>
+        </div>
+      </div>
+    </div>
+
+
+    <script>
+
+      const idx_of = {
+        // Sliders
+        "randomSpeed": 0,
+        "nIterations": 1,
+        // Buttons
+        "training": 0,
+        "randomise": 1,
+        "savedata": 2,
+        "cleardata": 3,
+        "clearmodel": 4,
+        "discretise": 5,
+        "complex": 6,
+        "explmode": 7,
+        "dataset": 8,
+        "model": 9
+      };
+
+      const app_names = [
+        "Unknown",          // 0
+        "FM Synth",         // 1
+        "Euclidean Seq",    // 2
+        "MultiFX",          // 3
+        "ML-MultiFX"        // 4
+      ];
+
+      let grid = new MagicGrid({container: "#container", // Required. Can be a class, id, or an HTMLElement.
+        static: true, // Required for static content.
+        animate: true,
+        gutter:10,
+        // maxColumns:4, 
+        useMin:true} // Optional.
+        );
+    window.addEventListener('resize', () => {
+      grid.refreshItems();
+      grid.positionItems();
+    });        
+
+      console.log(grid);
+      grid.listen();
+
+      var slider_queue = [];
+
+      function run() {
+        if (slider_queue.length > 0) {
+          // Take the last element
+          const work = slider_queue[slider_queue.length - 1];
+          if (work !== undefined) {
+            const idx = work[0];
+            const val = work[1];
+            fetch("/dials.cgi?s=" + idx + "&v=" + val);
+          }
+          // Clear array
+          slider_queue.length = 0;
+        }
+      }
+
+      setInterval(run, 100);
+
+      var datasetRadios = new Nexus.RadioButton('#datasetSelector',{
+        'size': [150,35],
+        'numberOfButtons': 4,
+        'active': 0
+      })
+      datasetRadios.lastSelected = 0;
+      datasetRadios.uiChange = true;
+      datasetRadios.on('change', function(v) {
+        if (datasetRadios.uiChange) {
+          if (v >= 0) {
+            fetch("/buttons.cgi?b=" + idx_of["dataset"] + "&v=" + v);
+            datasetRadios.lastSelected = v;
+          } else {
+            datasetRadios.select(datasetRadios.lastSelected);
+          }
+        };
+        datasetRadios.uiChange = true;
+      });
+
+      var modelRadios = new Nexus.RadioButton('#modelSelector',{
+        'size': [150,35],
+        'numberOfButtons': 4,
+        'active': 0
+      })
+
+      modelRadios.lastSelected = 0;
+      modelRadios.uiChange = true;
+      modelRadios.on('change', function(v) {
+        if (modelRadios.uiChange) {
+          if (v >= 0) {
+            fetch("/buttons.cgi?b=" + idx_of["model"] + "&v=" + v);
+            modelRadios.lastSelected = v;
+          } else {
+            modelRadios.select(modelRadios.lastSelected);
+          }
+        };
+        modelRadios.uiChange = true;
+      });
+
+    /**
+     * Dataset/model buttons
+     */
+
+      var btnResetModel = new Nexus.TextButton('#resetModelButton',{
+        'size': [120,40],
+        'mode': 'button',
+        'state': false,
+        'text': "Reset"
+      })
+      btnResetModel.on('change', function (v) {
+        fetch("/buttons.cgi?b=" + idx_of["clearmodel"] + "&v=" + (+v));
+      });
+      var btnClearData = new Nexus.TextButton('#clearDataButton',{
+        'size': [120,40],
+        'mode': 'button',
+        'state': false,
+        'text': "Clear"
+      })
+      btnClearData.on('release', function (v) {
+        fetch("/buttons.cgi?b=" + idx_of["cleardata"] + "&v=" + (+v));
+      });
+
+      var trainRadios = new Nexus.RadioButton('#trainSelector',{
+        'size': [150,35],
+        'numberOfButtons': 2,
+        'active': 0
+      })
+      trainRadios.uiChange = true;
+      trainRadios.on('change', function(v) {
+        if (trainRadios.uiChange) {
+          fetch("/buttons.cgi?b=" + idx_of["training"] + "&v=" + v);
+        }
+        trainRadios.uiChange = true;
+      });
+
+      // var btnTrain = new Nexus.TextButton('#trainButton',{
+      //   'size': [120,40],
+      //   'mode': 'button',
+      //   'state': false,
+      //   'text': "Acquire"
+      // })
+      // btnTrain.togglestate = false;
+      // btnTrain.on('release', function () {
+      //   btnTrain.togglestate = !btnTrain.togglestate;
+      //   fetch("/buttons.cgi?b=" + idx_of["training"] + "&v=" + (+btnTrain.togglestate));
+      //   if (btnTrain.togglestate) {
+      //     // Toggle from acquire to train (inference to training)
+      //     btnTrain.text = "Train";
+      //   } else {
+      //     // Toggle from train to acquire (training to inference)
+      //     btnTrain.text = "Acquire";
+      //   }
+      // });
+
+      /**
+       * Iterations
+       */
+
+      var numboxIterations = new Nexus.Number('#numIterations',{
+        'size': [60,30],
+        'value': 0,
+        'min': 1,
+        'max': 300,
+        'step': 1
+      })
+
+      var sliderIterations = new Nexus.Slider('#iterationsSlider',{
+          'size': [150,30],
+          'mode': 'absolute',  // 'relative' or 'absolute'
+          'min': 1,
+          'max': 1000,
+          'step': 1,
+          'value': 0
+      })
+
+      numboxIterations.link(sliderIterations);
+
+      var sliderIterations_uichange = true;
+      sliderIterations.on('change',function(v) {
+        if (sliderIterations_uichange === true) {
+          // v is the value of the button
+          console.log(v);
+          slider_queue.push([idx_of["nIterations"], v]);
+        }
+        sliderIterations_uichange = true;
+      })
+
+      /**
+       * Exploration mode and Range
+       */
+
+      var sliderRange = new Nexus.Slider('#rangeSlider',{
+          'size': [150,30],
+          'mode': 'absolute',  // 'relative' or 'absolute'
+          'min': 0,
+          'max': 1,
+          'step': 0,
+          'value': 0.5
+      })
+
+      var sliderRange_uichange = true;
+      sliderRange.on('change',function(v) {
+        if (sliderRange_uichange === true) {
+          // v is the value of the button
+          console.log(v);
+          slider_queue.push([idx_of["randomSpeed"], v]);
+        }
+        sliderRange_uichange = true;
+      });
+
+      var exploModeSelect = new Nexus.Select('#exploModeSelect',{
+        'size': [100,30],
+        'options': ['nn weight','pretrain', 'zoom']
+      })
+      var exploModeSelect_uichange = true;
+      exploModeSelect.on('change',function(v) {
+        if (exploModeSelect_uichange) {
+          console.log(v);
+          fetch("/buttons.cgi?b=" + idx_of["explmode"] + "&v=" + v.index);
+        }
+        exploModeSelect_uichange = true;
+      })
+
+      /**
+       * App-specific controls
+       */
+      var sliderPulse = new Nexus.Slider('#pulseSlider',{
+          'size': [150,30],
+          'mode': 'absolute',  // 'relative' or 'absolute'
+          'min': 0.1,
+          'max': 2,
+          'step': 0,
+          'value': 0.5
+      });
+      sliderPulse.on("change", function (v) {
+        console.log(v);
+      });
+
+      /**
+       * Polling
+       */
+
+      async function getJSON() {
+        var data = false;
+        var response = false;
+        response = await fetch("/ssi.shtml");
+        if (!response.ok) {
+          console.log("poll error");
+        }
+        try {
+          // Parse the response as JSON
+          data = await response.json();
+        } catch (error) {}
+        if (data) {
+          //console.log(data);
+          // Last error
+          document.getElementById('loss').innerText = data.last_error;
+          // Expl range
+          sliderRange_uichange = false;
+          sliderRange.value = data.exploration_range;
+          // Expl dropdown
+          exploModeSelect_uichange = false;
+          exploModeSelect.selectedIndex = data.current_expl_mode;
+          // N iterations
+          sliderIterations_uichange = false;
+          sliderIterations.value = data.n_iterations;
+          // Training state
+          //btnTrain.togglestate = data.current_nn_mode;
+          trainRadios.uiChange = false;
+          trainRadios.select(data.current_nn_mode);
+          // Datasets and models
+          datasetRadios.uiChange = false;
+          datasetRadios.select(data.current_dataset);
+          modelRadios.uiChange = false;
+          modelRadios.select(data.current_model);
+          // App data
+          document.getElementById("appName").innerText =
+            app_names[data.app_id];
+        } else {
+          // Error polling data
+          document.getElementById('loss').innerText = "N/A";
+          document.getElementById("appName").innerText = "[...waiting]";
+        }
+      }  // getJSON
+
+      setInterval(getJSON, 100);
+
+    </script>
+
+
+  </body>
+</html>
