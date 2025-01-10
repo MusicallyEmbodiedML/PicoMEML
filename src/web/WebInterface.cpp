@@ -52,9 +52,5 @@ void WebInterfaceRun(void) {
     httpd_init();
     ssi_init();
     cgi_init();
-    // printf("Http server initialized.\n");
-    // infinite loop for now
-    for (;;) {
-        tight_loop_contents();
-    }
+    Serial.println("Http server initialized.");
 }

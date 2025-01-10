@@ -6,6 +6,7 @@
 #include "src/synth/FMSynth.hpp"
 #include "src/interface/MEMLInterface.hpp"
 #include "src/interface/mlp_task.hpp"
+#include "src/web/WebInterface.hpp"
 
 #include <cstdint>
 #include <vector>
@@ -141,6 +142,10 @@ void setup1() {
         nullptr,
         &adc_timer
     );
+
+    // Start web interface
+    WebInterfaceSetup();
+    WebInterfaceRun();
 }
 
 bool _buttonsTimerCallback(__unused struct repeating_timer *) {
@@ -152,6 +157,7 @@ bool _buttonsTimerCallback(__unused struct repeating_timer *) {
 
 void loop1() {
     static constexpr uint32_t period_ms = 1;
+
     // Pulse
 #if 1
     static constexpr float pulse_every_s = 1;
