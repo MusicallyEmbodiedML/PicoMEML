@@ -5,15 +5,19 @@
 #include "../synth/FMSynth.hpp"
 #elif FX_PROCESSOR
 #include "../synth/matrixMix.hpp"
+#elif EUCLIDEAN
+#include "../synth/EuclideanSeq.hpp"
 #endif
 #include <vector>
 
 #include <cmath>
 
 #if FM_SYNTH
-static FMSynth fm_synth_(kSampleRate);
+static AUDIO_MEM fm_synth_(kSampleRate);
 #elif FX_PROCESSOR
-static MaxtrixMixApp multi_fx_app_(kSampleRate);
+static AUDIO_MEM MaxtrixMixApp multi_fx_app_(kSampleRate);
+#elif EUCLIDEAN
+static AUDIO_MEM EuclideanSeqApp euclideanApp;
 #endif  // FM_SYNTH
 
 
@@ -21,6 +25,8 @@ void AudioAppSetup(void)
 {
 #if FM_SYNTH
     fm_synth_.EnableMIDI(false);
+#elif EUCLIDEAN
+    euclideanApp.init(kSampleRate);
 #endif
 }
 
@@ -34,16 +40,22 @@ stereosample_t AUDIO_FUNC(AudioAppProcess)(stereosample_t y)
 #elif FX_PROCESSOR
     y.L = multi_fx_app_.play(y.L);
     y.R = y.L;
+#elif EUCLIDEAN
+    euclideanApp.loop();
+    //no sound, just CV
+    y.L=y.R=0;
 #endif // FM_SYNTH
 
     return y;
 }
 
-void AUDIO_FUNC(AudioAppSetParams)(std::vector<float> &params)
+void AudioAppSetParams(std::vector<float> &params)
 {
 #if FM_SYNTH
     fm_synth_.mapParameters(params);
 #elif FX_PROCESSOR
     multi_fx_app_.mapParameters(params);
+#elif EUCLIDEAN
+    euclideanApp.mapParameters(params);    
 #endif
 }

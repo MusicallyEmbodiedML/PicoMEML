@@ -57,6 +57,7 @@ queue_t *nn_paramupdate_ = nullptr;
 
 void mlp_init(queue_t *nn_paramupdate, size_t n_params)
 {
+    Serial.printf("MLP Init %d\n", n_params);
     const std::vector<size_t> layers_nodes = {
         sizeof(ts_joystick_read)/sizeof(float) + kBias,
         10, 10, 14,
@@ -64,18 +65,27 @@ void mlp_init(queue_t *nn_paramupdate, size_t n_params)
     };
 
     n_output_params_ = n_params;
+    Serial.println("Layer Data Init");
 
     // Instantiate objects
     assert(kMaxDatasets == kMaxModels);
-    for (unsigned int n = 0; n < kMaxModels; n++) {
+    for (size_t n = 0; n < kMaxModels; n++) {
+        Serial.printf("Making DS %d\n");
         dataset_[n] = new(dataset_mem_[n]) Dataset();
-        mlp_[n] = new (mlp_mem_[n]) MLP<float>(
+        Serial.printf("Making MLP %d\n");
+        
+        mlp_[n] = new (std::nothrow) MLP<float>(
             layers_nodes,
             layers_activfuncs,
             loss::LOSS_MSE,
             use_constant_weight_init,
             constant_weight_init
         );
+        if (!mlp_[n]) {
+            Serial.printf("Out of memory allocating MLP %ul\n", n);
+        }else{
+            Serial.printf("MLP %d allocated\n", n);
+        }
     }
 
     // Instantiate channels

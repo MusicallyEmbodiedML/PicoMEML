@@ -7,11 +7,7 @@
 #include <vector>
 #include "pico/util/queue.h"
 
-extern "C" {
-
-    void mlp_init(queue_t *nn_paramupdate, size_t n_params);
-
-}  // extern "C"
+void mlp_init(queue_t *nn_paramupdate, size_t n_params);
 
 void mlp_inference_nochannel(ts_joystick_read joystick_read);
 void mlp_train();

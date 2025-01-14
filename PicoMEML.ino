@@ -7,15 +7,22 @@
 #include "src/synth/FMSynth.hpp"
 #elif FX_PROCESSOR
 #include "src/synth/matrixMix.hpp"
-#endif  // FM_SYNTH
+#elif EUCLIDEAN
+#include "src/synth/EuclideanSeq.hpp"
+#endif  
 
 #include "src/interface/MEMLInterface.hpp"
 #include "src/interface/mlp_task.hpp"
 
 #include <cstdint>
 #include <vector>
+
 #include "pico/util/queue.h"
+
+//for random bits
 #include "hardware/clocks.h"
+#include "hardware/structs/rosc.h"
+
 
 static queue_t queue_audioparam;
 static queue_t queue_interface_pulse;
@@ -32,7 +39,7 @@ ts_app_state gAppState = {
     .n_iterations = 500,
     .last_error = 0.0f,
     .exploration_range = 0.0f,
-    .app_id = app_id_fmsynth,
+    .app_id = app_id_euclidean,
     .current_dataset = 0,
     .current_model = 0,
     .current_nn_mode = mode_inference,
@@ -48,9 +55,23 @@ MEMLInterface meml_interface(
     &FMSynth::GenParams,
 #elif FX_PROCESSOR
     &MaxtrixMixApp::GenParams,
+#elif EUCLIDEAN
+    &EuclideanSeqApp::GenParams,
 #endif  // FM_SYNTH
     kN_synthparams
 );
+
+uint32_t pico_get_random_bits(int num_bits) {
+    uint32_t random_value = 0;
+
+    // Read RANDOMBIT num_bits times
+    for (int i = 0; i < num_bits; i++) {
+        // Shift the random value left by 1 and add the RANDOMBIT
+        random_value = (random_value << 1) | (rosc_hw->randombit & 0x1);
+    }
+
+    return random_value;
+}
 
 
 void setup() {
@@ -74,6 +95,7 @@ void setup() {
     // I2S callback is last
     AudioDriver_Output::SetCallback(&AudioAppProcess);
     // Wait for init sync
+    Serial.println("Audio running");
     flag_init_0 = true;
     while (!flag_init_1) {
         // Wait for other core
@@ -83,6 +105,9 @@ void setup() {
 void AUDIO_FUNC(loop)() {
 
     {
+        // Audio parameter queue receiver:
+        // From interface/mlp_task.cpp and interface/MEMLInterface.cpp
+        // on core 1
         std::vector<float> audio_params(kN_synthparams);
         if (queue_try_remove(&queue_audioparam, audio_params.data())) {
             Serial.println("A- Audio params received.");
@@ -112,6 +137,7 @@ void setup1() {
         while(!Serial) {;}
     }
 
+    Serial.println("Core 1 Start");
     // Core INTERFACE routine setup
     queue_init(&queue_audioparam, sizeof(float)*kN_synthparams, 1);
     queue_init(&queue_interface_pulse, sizeof(float), 1);
@@ -121,8 +147,10 @@ void setup1() {
     for (auto &out_pin : { led_Training, led_MIDI }) {
         pinMode(out_pin, OUTPUT);
     }
+    Serial.println("Input Pins Set");
     // MLP setup
     mlp_init(&queue_audioparam, kN_synthparams);
+    Serial.println("MLP Started");
 
     // Wait for init sync
     flag_init_1 = true;
