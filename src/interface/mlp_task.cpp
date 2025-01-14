@@ -9,8 +9,10 @@
 #include <cstdio>
 #include <cassert>
 #include <string>
+#include <deque>
 
 #include <Arduino.h>
+#include "RingBuf.h"
 
 
 // Private "methods"
@@ -55,17 +57,29 @@ static size_t nn_n_ = 0;
 
 queue_t *nn_paramupdate_ = nullptr;
 
-void mlp_init(queue_t *nn_paramupdate, size_t n_params)
+std::deque<float> inputRB; //ring buffer for inputs. Maybe a more efficient way to do this?
+
+void mlp_init(queue_t *nn_paramupdate, size_t n_params, size_t n_inputbuffer)
 {
     Serial.printf("MLP Init %d\n", n_params);
+    
+    size_t n_inputs = sizeof(ts_joystick_read)/sizeof(float);
+    n_inputs *= n_inputbuffer;
+    // fill up a ring buffer
+
+    if (n_inputbuffer > 1) {    
+        for(size_t i=0; i < n_inputs; i++) {
+            inputRB.push_back(0);
+        }
+    }
+    
     const std::vector<size_t> layers_nodes = {
-        sizeof(ts_joystick_read)/sizeof(float) + kBias,
+        n_inputs + kBias,
         10, 10, 14,
         n_params
     };
 
     n_output_params_ = n_params;
-    Serial.println("Layer Data Init");
 
     // Instantiate objects
     assert(kMaxDatasets == kMaxModels);
@@ -221,6 +235,20 @@ void mlp_draw(float speed)
 void mlp_add_data_point(const std::vector<float> &in, const std::vector<float> &out)
 {
     dataset_[ds_n_]->Add(in, out);
+    mlp_trigger_redraw_();
+}
+
+void mlp_buffer_datapoint_tdnn(const std::vector<float> &in) {
+for(size_t i=0; i < in.size(); i++) {
+    inputRB.pop_front();
+    inputRB.push_back(in.at(i));
+}
+}
+
+void mlp_add_data_point_tdnn(const std::vector<float> &in, const std::vector<float> &out)
+{
+    std::vector<float> inputVector(inputRB.begin(), inputRB.end());
+    dataset_[ds_n_]->Add(inputVector, out);
     mlp_trigger_redraw_();
 }
 

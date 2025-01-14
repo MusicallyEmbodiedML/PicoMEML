@@ -37,6 +37,7 @@
 
 #include  <cstdlib>
 #include <cmath>
+#include <functional>
 
 using namespace std;
 
@@ -50,19 +51,17 @@ using namespace std;
 
 
 
-//if using CHEERP, then convert incoming arrays to vectors inplace, otherwise, preserve the C++ vector interface
-//see maxiIndex for a simple example
-// #define DOUBLEARRAY_REF vector<float> &
-// #define DOUBLEARRAY vector<float> 
-// #define NORMALISE_ARRAY_TYPE(invar, outvar) vector<float> outvar = vector<float>(invar.begin(), invar.end()); //emplace into new variable
-// #define DECLARE_F64_ARRAY(x) std::vector<float> x;
-// #define F64_ARRAY_SIZE(x) x.size()
-// #define F64_ARRAY_SETFROM(to,from) to = from;
-// #define F64_ARRAY_CLEAR(x) x.clear();
-// #define F64_ARRAY_AT(x,i) x[i]
+#define DOUBLEARRAY_REF vector<float> &
+#define DOUBLEARRAY vector<float> 
+#define NORMALISE_ARRAY_TYPE(invar, outvar) vector<float> outvar = vector<float>(invar.begin(), invar.end()); //emplace into new variable
+#define DECLARE_F64_ARRAY(x) std::vector<float> x;
+#define F64_ARRAY_SIZE(x) x.size()
+#define F64_ARRAY_SETFROM(to,from) to = from;
+#define F64_ARRAY_CLEAR(x) x.clear();
+#define F64_ARRAY_AT(x,i) x[i]
 // #define LOG(x) cout << x;
-// #define F64_ARRAY_CREATE(len) std::vector<float>(len);
-// #define F64_ARRAY_FILL(x, val) std::fill(x.begin(), x.end(), val);
+#define F64_ARRAY_CREATE(len) std::vector<float>(len);
+#define F64_ARRAY_FILL(x, val) std::fill(x.begin(), x.end(), val);
 
 
 
@@ -375,77 +374,77 @@ inline float maxiDelayline<DELAYTIME>::play(const float input, const size_t size
 // /**
 //  * A ring buffer. This enables you to look at the last N values in a time series.
 //  */
-// class CHEERP_EXPORT maxiRingBuf {
-// public:
-//     maxiRingBuf();
+class maxiRingBuf {
+public:
+    maxiRingBuf();
 
-//     /*!Allocate memory for the buffer \param N The maximum length of the buffer*/
-//     void setup(size_t N) {
-//         buf = F64_ARRAY_CREATE(N);
-//         F64_ARRAY_FILL(buf,0);
-//     }
-//     /*!Add the latest value to the buffer \param x A value*/
-//     void push(float x) {
-//         buf[idx] = x;
-//         idx++;
-//         if (idx==F64_ARRAY_SIZE(buf)) {
-//             idx=0;
-//         }
-//     }
+    /*!Allocate memory for the buffer \param N The maximum length of the buffer*/
+    void setup(size_t N) {
+        buf = F64_ARRAY_CREATE(N);
+        F64_ARRAY_FILL(buf,0);
+    }
+    /*!Add the latest value to the buffer \param x A value*/
+    void push(float x) {
+        buf[idx] = x;
+        idx++;
+        if (idx==F64_ARRAY_SIZE(buf)) {
+            idx=0;
+        }
+    }
     
-//     /*! \returns The size of the buffer*/
-//     size_t size() {return F64_ARRAY_SIZE(buf);}
+    /*! \returns The size of the buffer*/
+    size_t size() {return F64_ARRAY_SIZE(buf);}
 
-//     /*! \returns the value at the front of the buffer*/
-//     float head() {return idx == 0 ? buf[F64_ARRAY_SIZE(buf)-1] : buf[idx-1];}
+    /*! \returns the value at the front of the buffer*/
+    float head() {return idx == 0 ? buf[F64_ARRAY_SIZE(buf)-1] : buf[idx-1];}
 
-//     /*! \returns the oldest value in the buffer, for a particular window size \param N The size of the window, N < the size of the buffer*/
-//     float tail(size_t N) {
-//         float val=0;
-//         if (idx >= N) {
-//             val = buf[idx-N];
-//         }else{
-//             size_t tailIdx = F64_ARRAY_SIZE(buf) - (N-idx);
-//             val = buf[tailIdx];
-//         }
-//         return val;
-//     }
+    /*! \returns the oldest value in the buffer, for a particular window size \param N The size of the window, N < the size of the buffer*/
+    float tail(size_t N) {
+        float val=0;
+        if (idx >= N) {
+            val = buf[idx-N];
+        }else{
+            size_t tailIdx = F64_ARRAY_SIZE(buf) - (N-idx);
+            val = buf[tailIdx];
+        }
+        return val;
+    }
 
-//     using reduceFunction = std::function<float(float, float)>;
-//     /**
-//      * Apply a function of the previous N values in the buffer
-//      * \param N The number of values in the window
-//      * \param func A function in the form float func(float previousResult, float nextValue)
-//      * \param initval The initial value to pass into the function (usually 0)
-//      * \returns The last result of the function, after passing in all values from the window
-//      * Example: this function will sum the values in the window: 
-//      *     auto sumfunc = [](float val, float n) {return val + n;};
-//      */
-//     float reduce(size_t N, reduceFunction func, float initval) {
-//         float val=0;
-//         if (idx >= N) {
-//             for(int i=idx-N; i < idx; i++) {
-//                 val = func(val, buf[i]);
-//             }
-//         }else{
-//             //first chunk
-//             for(int i=F64_ARRAY_SIZE(buf)-(N-idx); i < buf.size(); i++) {
-//                 val = func(val, buf[i]);
-//             }
-//             //second chunk
-//             for(int i=0; i < idx; i++) {
-//                 val = func(val, buf[i]);
-//             }
-//         }
-//         return val;
-//     }
+    using reduceFunction = std::function<float(float, float)>;
+    /**
+     * Apply a function of the previous N values in the buffer
+     * \param N The number of values in the window
+     * \param func A function in the form float func(float previousResult, float nextValue)
+     * \param initval The initial value to pass into the function (usually 0)
+     * \returns The last result of the function, after passing in all values from the window
+     * Example: this function will sum the values in the window: 
+     *     auto sumfunc = [](float val, float n) {return val + n;};
+     */
+    float reduce(size_t N, reduceFunction func, float initval) {
+        float val=0;
+        if (idx >= N) {
+            for(int i=idx-N; i < idx; i++) {
+                val = func(val, buf[i]);
+            }
+        }else{
+            //first chunk
+            for(int i=F64_ARRAY_SIZE(buf)-(N-idx); i < buf.size(); i++) {
+                val = func(val, buf[i]);
+            }
+            //second chunk
+            for(int i=0; i < idx; i++) {
+                val = func(val, buf[i]);
+            }
+        }
+        return val;
+    }
 
     
     
-// private:
-//     DOUBLEARRAY buf;
-//     size_t idx=0;
-// };
+private:
+    DOUBLEARRAY buf;
+    size_t idx=0;
+};
 
 
 // //lagging with an exponential moving average
@@ -1131,9 +1130,9 @@ inline float maxiFlanger<DELAYTIME>::flange(const float input, const unsigned in
     return (output + input) / 2.0f;
 }
 
-// /**
-//  * A chorus effect
-//  */ 
+/**
+ * A chorus effect
+ */ 
 // class maxiChorus
 // {
 // public:

@@ -97,6 +97,8 @@ void setup() {
     // Wait for init sync
     Serial.println("Audio running");
     flag_init_0 = true;
+
+
     while (!flag_init_1) {
         // Wait for other core
     };
@@ -149,7 +151,7 @@ void setup1() {
     }
     Serial.println("Input Pins Set");
     // MLP setup
-    mlp_init(&queue_audioparam, kN_synthparams);
+    mlp_init(&queue_audioparam, kN_synthparams, 32);
     Serial.println("MLP Started");
 
     // Wait for init sync

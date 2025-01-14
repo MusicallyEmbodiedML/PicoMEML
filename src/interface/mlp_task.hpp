@@ -7,12 +7,12 @@
 #include <vector>
 #include "pico/util/queue.h"
 
-void mlp_init(queue_t *nn_paramupdate, size_t n_params);
-
+void mlp_init(queue_t *nn_paramupdate, size_t n_params, size_t n_inputbuffer=1);
 void mlp_inference_nochannel(ts_joystick_read joystick_read);
 void mlp_train();
 void mlp_draw(float speed = 0.01);
 void mlp_add_data_point(const std::vector<float> &in, const std::vector<float> &out);
+void mlp_add_data_point_tdnn(const std::vector<float> &in, const std::vector<float> &out);
 void mlp_clear_data();
 void mlp_clear_model();
 void mlp_set_speed(float speed);

@@ -149,7 +149,7 @@ void MEMLInterface::SetToggleButton(te_button_idx button_n, int8_t state)
                             joystick_current_.as_struct.potRotate,
                             1.f  // bias
                         };
-                        mlp_add_data_point(
+                        mlp_add_data_point_tdnn(
                             input, mlp_stored_output
                         );
                         Serial.println("INTF- Saved data point");
