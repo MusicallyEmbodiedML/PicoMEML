@@ -24,6 +24,7 @@ static AUDIO_MEM EuclideanSeqApp euclideanApp;
 
 void AudioAppSetup(void)
 {
+    maxiSettings::setup(kSampleRate, 1, 64);
 #if FM_SYNTH
     fm_synth_.EnableMIDI(false);
 #elif EUCLIDEAN

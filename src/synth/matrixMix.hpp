@@ -102,6 +102,7 @@ class MaxtrixMixApp {
 public:
 
     MaxtrixMixApp(size_t sample_rate): smoother_(100.f, sample_rate) {
+        maxiSettings::setup(sample_rate, 1, 16);
         mmix.setDirectFeedbackScaling(0.0);
         unsmoothParams.resize(kN_synthparams);
         params.resize(kN_synthparams);
