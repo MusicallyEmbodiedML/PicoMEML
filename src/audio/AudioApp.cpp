@@ -4,7 +4,7 @@
 #if FM_SYNTH
 #include "../synth/FMSynth.hpp"
 #elif FX_PROCESSOR
-#include "../synth/matrixMix.hpp"
+#include "../synth/FXDelayer.hpp"
 #elif EUCLIDEAN
 #include "../synth/EuclideanSeq.hpp"
 #endif
@@ -16,7 +16,7 @@
 #if FM_SYNTH
 static AUDIO_MEM FMSynth fm_synth_(kSampleRate);
 #elif FX_PROCESSOR
-static AUDIO_MEM MaxtrixMixApp multi_fx_app_(kSampleRate);
+static FXDelayer multi_fx_app_(kSampleRate);
 #elif EUCLIDEAN
 static AUDIO_MEM EuclideanSeqApp euclideanApp;
 #endif  // FM_SYNTH
@@ -60,6 +60,7 @@ void AudioAppSetParams(std::vector<float> &params)
     fm_synth_.mapParameters(params);
 #elif FX_PROCESSOR
     multi_fx_app_.mapParameters(params);
+    Serial.println(params[0]);
 #elif EUCLIDEAN
     euclideanApp.mapParameters(params);    
 #endif

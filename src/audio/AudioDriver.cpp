@@ -170,7 +170,7 @@ bool AudioDriver_Output::Setup() {
         Serial.println("AUDIO- Failed to setup I2C with codec!");
     }
 
-    set_sys_clock_khz(132000, true);
+    set_sys_clock_khz(132000*2, true);
     // set_sys_clock_khz(129600, true);
     Serial.printf("System Clock: %lu\n", clock_get_hz(clk_sys));
 

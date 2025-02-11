@@ -6,7 +6,7 @@
 #if FM_SYNTH
 #include "src/synth/FMSynth.hpp"
 #elif FX_PROCESSOR
-#include "src/synth/matrixMix.hpp"
+#include "src/synth/FXDelayer.hpp"
 #elif EUCLIDEAN
 #include "src/synth/EuclideanSeq.hpp"
 #endif  
@@ -59,7 +59,7 @@ MEMLInterface meml_interface(
 #if FM_SYNTH
     &FMSynth::GenParams,
 #elif FX_PROCESSOR
-    &MaxtrixMixApp::GenParams,
+    &FXDelayer::GenParams,
 #elif EUCLIDEAN
     &EuclideanSeqApp::GenParams,
 #endif  // FM_SYNTH
@@ -113,7 +113,6 @@ void setup() {
 }
 
 void AUDIO_FUNC(loop)() {
-
     {
         // Audio parameter queue receiver:
         // From interface/mlp_task.cpp and interface/MEMLInterface.cpp
@@ -124,7 +123,6 @@ void AUDIO_FUNC(loop)() {
             AudioAppSetParams(audio_params);
         }
     }
-
     {
         float pulse;
         if (queue_try_remove(&queue_interface_pulse, &pulse)) {
@@ -138,6 +136,8 @@ void AUDIO_FUNC(loop)() {
             Serial.println("A- MIDI received.");
         }
     }
+
+    //delayMicroseconds(500);
 }
 
 
@@ -187,7 +187,7 @@ void loop1() {
         //Serial.println(".");
         std::vector<float> params;
         AnalysisParamsRead(params);
-        Serial.println(params[0]);
+        //Serial.println(params[0]);
     }
 #endif
 
