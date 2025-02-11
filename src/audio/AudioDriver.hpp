@@ -2,6 +2,7 @@
 #define __AUDIO_DRIVER_HPP__
 
 #include <cstddef>
+#include <Arduino.h>
 
 extern "C" {
 
@@ -27,6 +28,8 @@ class AudioDriver_Output {
     static bool Setup();
     static inline void SetCallback(audiocallback_fptr_t callback) {
         audio_callback_ = callback;
+        Serial.print("AUDIO_DRIVER - Callback address: ");
+        Serial.printf("%p\n", audio_callback_);
     }
 
     AudioDriver_Output() = delete;
