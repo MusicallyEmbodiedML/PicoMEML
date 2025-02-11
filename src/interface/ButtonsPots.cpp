@@ -1,6 +1,7 @@
 #include "ButtonsPots.hpp"
 #include "../utils/MedianFilter.h"
 #include "../common/common_defs.h"
+#include "../utils/Scope.hpp"
 
 #include <Arduino.h>
 #include <map>
@@ -173,6 +174,8 @@ void ButtonsPots::ProcessButton_(const PinConfig pin_n,
 
 void ButtonsPots::ButtonISR(void)
 {
+    Scope::Set(1, true);
+
     for (unsigned int n = 0; n < kNButtons; n++) {
         PinConfig pin_n = Buttons[n];
         bool button_current_state = digitalRead(pin_n);
@@ -180,4 +183,6 @@ void ButtonsPots::ButtonISR(void)
         ProcessButton_(pin_n, n, button_current_state);
  
     }
+
+    Scope::Set(1, false);
 }

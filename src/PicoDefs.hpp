@@ -5,14 +5,17 @@
 #include "interface/MEMLInterface.hpp"
 
 // Select which example app to run
-#define FM_SYNTH         0  ///< FM Synth (new macro)
-#define FX_PROCESSOR     1  ///< FX Processor (new macro)
+#define FM_SYNTH         1  ///< FM Synth (new macro)
+#define FX_PROCESSOR     0  ///< FX Processor (new macro)
 #define EUCLIDEAN        0
 
+// OVERCLOCK CHIP for audio
+#define AUDIO_OVERCLOCK    1
+
+#define SCOPE_ON    1
 
 #define AUDIO_FUNC(x)    __not_in_flash_func(x)  ///< Macro to make audio function load from mem
 #define AUDIO_MEM    __not_in_flash("audio")  ///< Macro to make variable load from mem
-
 
 /**
  * @brief Pin configuration on the Pi Pico 2
@@ -21,6 +24,9 @@ enum PinConfig {
     i2c_sgt5000Data = 0,
     i2c_sgt5000Clk = 1,
     led_Training = 2,
+#if SCOPE_ON
+    led_Scope0 = 3,
+#endif
 #if FMSYNTH
     uart_MidiTX = 4,
     uart_MidiRX = 5,
@@ -37,6 +43,9 @@ enum PinConfig {
     led_MIDI = 21,
     button_ZoomOut = 18,
     button_ZoomIn = 19,
+#if SCOPE_ON
+    led_Scope1 = 20,
+#endif
     pot_JoystickX = 26,
     pot_JoystickY = 27,
     pot_JoystickZ = 28

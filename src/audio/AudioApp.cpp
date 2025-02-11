@@ -11,6 +11,7 @@
 #include <vector>
 #include <cmath>
 #include "AnalysisParams.hpp"
+#include "../utils/Scope.hpp"
 
 
 #if FM_SYNTH

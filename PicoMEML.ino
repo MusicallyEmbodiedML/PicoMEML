@@ -19,6 +19,7 @@
 
 #include "pico/util/queue.h"
 #include "src/audio/AnalysisParams.hpp"
+#include "src/utils/Scope.hpp"
 
 //for random bits
 #include "hardware/clocks.h"
@@ -91,6 +92,9 @@ void setup() {
     //Serial.printf("Generated Random Seed: %u\n", seed);
     // Seed the standard PRNG
     srand(seed);
+
+    // Set up scope
+    Scope::Setup();
 
     // Set up the mutex;
     AnalysisParamsSetup(kAudioApp_NAnalysisParams);
@@ -171,6 +175,9 @@ void setup1() {
 }
 
 void loop1() {
+
+    Scope::Set(1, true);
+
     // Read ADC
     ButtonsPots::Process();
 
@@ -190,6 +197,8 @@ void loop1() {
         Serial.println(params[0]);
     }
 #endif
+
+    Scope::Set(1, false);
 
     delay(period_ms);
 }

@@ -9,6 +9,8 @@
 #include "hardware/dma.h"
 #include "hardware/clocks.h"
 
+#include "../utils/Scope.hpp"
+
 
 #define TEST_TONES    0
 #define PASSTHROUGH   0
@@ -52,6 +54,7 @@ inline float AUDIO_FUNC(_scale_down)(float x) {
 
 
 static void AUDIO_FUNC(process_audio)(const int32_t* input, int32_t* output, size_t num_frames) {
+    Scope::Set(0, true);
     // Timing start
     auto ts = micros();
 
@@ -111,6 +114,8 @@ static void AUDIO_FUNC(process_audio)(const int32_t* input, int32_t* output, siz
     } else if (dspload < 0.9) {
         dsp_overload = false;
     }
+
+    Scope::Set(0, false);
 }
 
 static void __isr dma_i2s_in_handler(void) {
@@ -170,7 +175,7 @@ bool AudioDriver_Output::Setup() {
         Serial.println("AUDIO- Failed to setup I2C with codec!");
     }
 
-    set_sys_clock_khz(132000, true);
+    set_sys_clock_khz(132000 * (1 + (AUDIO_OVERCLOCK ? 1 : 0)), true);
     // set_sys_clock_khz(129600, true);
     Serial.printf("System Clock: %lu\n", clock_get_hz(clk_sys));
 
