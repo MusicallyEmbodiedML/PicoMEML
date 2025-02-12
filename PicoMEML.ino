@@ -150,6 +150,7 @@ void setup1() {
     if (waitForSerialOnStart){
         while(!Serial) {;}
     }
+    pinMode(20, OUTPUT);
 
     Serial.println("Core 1 Start");
     // Core INTERFACE routine setup
@@ -188,6 +189,7 @@ void loop1() {
     static constexpr float count_wraparound = (1000.f * pulse_every_s)
             / static_cast<float>(period_ms);
     static volatile float counter = 0;
+    static volatile bool flip = false;
     counter++;
     if (counter >= count_wraparound) {
         counter = 0;
@@ -195,6 +197,8 @@ void loop1() {
         std::vector<float> params;
         AnalysisParamsRead(params);
         Serial.println(params[0]);
+        digitalWrite(20, flip);
+        flip = !flip;
     }
 #endif
 

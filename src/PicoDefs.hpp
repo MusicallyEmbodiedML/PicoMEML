@@ -12,7 +12,7 @@
 // OVERCLOCK CHIP for audio
 #define AUDIO_OVERCLOCK    1
 
-#define SCOPE_ON    1
+#define SCOPE_ON    0
 
 #define AUDIO_FUNC(x)    __not_in_flash_func(x)  ///< Macro to make audio function load from mem
 #define AUDIO_MEM    __not_in_flash("audio")  ///< Macro to make variable load from mem
