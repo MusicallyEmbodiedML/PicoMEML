@@ -5,8 +5,8 @@
 #include "interface/MEMLInterface.hpp"
 
 // Select which example app to run
-#define FM_SYNTH         0  ///< FM Synth (new macro)
-#define FX_PROCESSOR     1  ///< FX Processor (new macro)
+#define FM_SYNTH         1  ///< FM Synth (new macro)
+#define FX_PROCESSOR     0  ///< FX Processor (new macro)
 #define EUCLIDEAN        0
 
 
@@ -21,7 +21,7 @@ enum PinConfig {
     i2c_sgt5000Data = 0,
     i2c_sgt5000Clk = 1,
     led_Training = 2,
-#if FMSYNTH
+#if !EUCLIDEAN
     uart_MidiTX = 4,
     uart_MidiRX = 5,
 #endif

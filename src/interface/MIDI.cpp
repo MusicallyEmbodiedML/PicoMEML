@@ -1,35 +1,38 @@
 #include "MIDI.hpp"
 
 
-Adafruit_USBD_MIDI usb_midi_;
-MIDI_CREATE_INSTANCE(Adafruit_USBD_MIDI, usb_midi_, MIDI);
-
-
-USBMIDIDevice::USBMIDIDevice()
+MIDIDevice::MIDIDevice(int rx_pin, int tx_pin) :
+    mySerial_(rx_pin, tx_pin),
+    serialMIDI_(mySerial_),
+    MIDI_((Transport &)serialMIDI_),
+    midi_in_chan_(1),
+    midi_out_chan_(1)
 {
-    if (!TinyUSBDevice.isInitialized()) {
-        TinyUSBDevice.begin(0);
-    }
-    usb_midi_.setStringDescriptor("TinyUSB MIDI");
 
-    // Initialize MIDI, and listen to all MIDI channels
-    // This will also call usb_midi's begin()
-    MIDI.begin(MIDI_CHANNEL_OFF);
-
-    // If already enumerated, additional class driverr begin() e.g msc, hid, midi won't take effect until re-enumeration
-    if (TinyUSBDevice.mounted()) {
-        TinyUSBDevice.detach();
-        delay(10);
-        TinyUSBDevice.attach();
-    }
-
-#if TINYUSB_NEED_POLLING_TASK
-    Serial.println("MIDI_USB: tud_task polling required.");
-#endif
+    MIDI_.begin(midi_in_chan_);
+    // TODO set up note receive callbacks
 }
 
 
-void USBMIDIDevice::MIDISendCC(size_t cc_index, int8_t val)
+void MIDIDevice::SendCC(size_t cc_index, int8_t val)
 {
-    //MIDI.sendControlChange(BUTTONS[i]->Bvalue, 127, BUTTONS[i]->Bchannel);
+    MIDI_.sendControlChange(cc_index, val, midi_out_chan_);
 }
+
+void MIDIDevice::SendParamsAsCC(std::vector<float> params)
+{
+    // Free CC params are 102-119: cap at lowest of two
+    const size_t kCCStart = 102;
+    const size_t kCCStop = 120;
+    constexpr size_t kNCCs = kCCStop - kCCStart;
+    size_t vec_size = params.size();
+    size_t param_size = kNCCs < vec_size ? kNCCs : vec_size;
+
+    for (size_t n = 0; n < param_size; n++) {
+        SendCC(n + kCCStart, params[n]);
+        //Serial.print(n);
+        //Serial.print(" ");
+    }
+    //Serial.println("");
+}
+

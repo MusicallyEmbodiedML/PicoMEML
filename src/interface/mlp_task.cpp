@@ -3,6 +3,7 @@
 #include "../mlp/Data.h"
 #include "../mlp/Dataset.hpp"
 #include "../utils/PrintVector.hpp"
+#include "MIDI.hpp"
 
 #include <algorithm>
 #include <cmath>
@@ -10,6 +11,7 @@
 #include <cassert>
 #include <string>
 #include <deque>
+#include <memory>
 
 #include "../PicoDefs.hpp"
 
@@ -49,6 +51,8 @@ static bool redraw_weights_ = true;
 static bool flag_zoom_in_ = false;
 static float speed_ = 1.0f;
 static size_t nn_n_ = 0;
+
+static std::unique_ptr<MIDIDevice> midi_;
 
 
 /******************************
@@ -107,6 +111,8 @@ void mlp_init(queue_t *nn_paramupdate, size_t n_inputs, size_t n_params, size_t 
     kZoom_mode_reset.resize(n_inputs, init_val);
     zoom_mode_centre_.resize(n_inputs, init_val);
     mlp_stored_input.resize(n_inputs, init_val);
+
+    midi_ = std::make_unique<MIDIDevice>();
 
     Serial.println("MLP- Initialised.");
 
@@ -386,4 +392,7 @@ void mlp_inference(input_data_t joystick_read) {
         nn_paramupdate_,
         reinterpret_cast<void *>(mlp_stored_output.data())
     );
+
+    // Send MIDI
+    midi_->SendParamsAsCC(mlp_stored_output);
 }

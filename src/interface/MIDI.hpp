@@ -2,20 +2,28 @@
 #define __MIDI_HPP__
 
 
-#include <Arduino.h>
-#include <Adafruit_TinyUSB.h>
 #include <MIDI.h>
-#include <cstdint>
-#include <cstddef>
+#include <SoftwareSerial.h>
+#include "../PicoDefs.hpp"
 
 
-class USBMIDIDevice {
+class MIDIDevice {
  public:
-    USBMIDIDevice();
-    void MIDISendCC(size_t cc_index, int8_t val);
+    MIDIDevice(int rx_pin = uart_MidiRX, int tx_pin = uart_MidiTX);
+    void SendCC(size_t cc_index, int8_t val);
+    void SendParamsAsCC(std::vector<float>params);
 
  protected:
+
+    using Transport = MIDI_NAMESPACE::SerialMIDI<SoftwareSerial>;
+    SoftwareSerial mySerial_;
+    Transport serialMIDI_;
+    MIDI_NAMESPACE::MidiInterface<Transport> MIDI_;
+    size_t midi_in_chan_;
+    size_t midi_out_chan_;
 };
 
+
+extern MIDIDevice gMIDIDevice;
 
 #endif  // __MIDI_HPP__
