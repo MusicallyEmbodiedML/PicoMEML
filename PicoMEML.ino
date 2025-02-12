@@ -174,7 +174,7 @@ void loop1() {
     // Read ADC
     ButtonsPots::Process();
 
-    static constexpr uint32_t period_ms = 1;
+    static constexpr uint32_t period_ms = 10;
     // Pulse
 #if 1
     static constexpr float pulse_every_s = 1;
