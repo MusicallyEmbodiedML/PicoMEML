@@ -39,7 +39,6 @@ static volatile bool flag_init_1 = false;
 const bool waitForSerialOnStart = true;
 
 
-
 // Global app state
 ts_app_state gAppState = {
     .n_iterations = 500,
@@ -50,8 +49,8 @@ ts_app_state gAppState = {
     .current_model = 0,
     .current_nn_mode = mode_inference,
     .current_expl_mode = expl_mode_pretrain
-    
 };
+bool gTriggerParamUpdate = false;
 
 // Global objects
 MEMLInterface meml_interface(
@@ -65,7 +64,7 @@ MEMLInterface meml_interface(
 #elif EUCLIDEAN
     &EuclideanSeqApp::GenParams,
 #endif  // FM_SYNTH
-    sizeof(ts_joystick_read)/sizeof(float),
+    kNInputParams,
     kN_synthparams
 );
 
@@ -123,7 +122,7 @@ void AUDIO_FUNC(loop)() {
         // on core 1
         std::vector<float> audio_params(kN_synthparams);
         if (queue_try_remove(&queue_audioparam, audio_params.data())) {
-            // Serial.println("A- Audio params received.");
+            //Serial.println(".");
             AudioAppSetParams(audio_params);
         }
     }
@@ -164,10 +163,13 @@ void setup1() {
     Serial.println("Input Pins Set");
     // MLP setup
     mlp_init(&queue_audioparam,
-             sizeof(ts_joystick_read)/sizeof(float),
+             kNInputParams,
              kN_synthparams);
     // PIO UART
     pio_uart = std::make_unique<PIOUART>();
+    // Report how many input parameters are there
+    Serial.printf("Input params: %d (Joystick: %d, UART: %d).\n",
+            kNInputParams, kNJoystickParams, kNExtraSensors);
 
     // Wait for init sync
     flag_init_1 = true;
@@ -181,6 +183,11 @@ void loop1() {
     ButtonsPots::Process();
     // Read PIO UART
     pio_uart->Poll();
+    // Perform parameter update if needed
+    if (gTriggerParamUpdate) {
+        meml_interface.UpdatePots();
+        gTriggerParamUpdate = false;
+    }
 
     static constexpr uint32_t period_ms = 10;
     // Pulse

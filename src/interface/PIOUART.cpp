@@ -4,10 +4,14 @@
 
 
 PIOUART::PIOUART(size_t baud_rate) :
-    serial_pio_(uart_PIOTx, uart_PIORx),
+    serial_pio_(SerialPIO::NOPIN, uart_PIORx),
     slipBuffer{ 0 },
     filters_(),
+#if USE_SERIAL_ADCS
     value_states_{ 0 },
+#else
+    value_states_{},
+#endif
     spiState(SPISTATES::WAITFOREND),
     spiIdx(0)
 {
@@ -23,15 +27,13 @@ PIOUART::PIOUART(size_t baud_rate) :
 
 void PIOUART::Poll()
 {
-    uint8_t spiByte=0;
+#if USE_SERIAL_ADCS
+    uint8_t spiByte = 32;
 
     while (serial_pio_.available()) {
 
-        //Serial.print(".");
         spiByte = serial_pio_.read();
-        //Serial.print(spiByte);
-        //Serial.print("->");
-#if 0
+
         switch(spiState) {
             case SPISTATES::WAITFOREND:
             //spiByte = serial_pio_.read();
@@ -77,43 +79,33 @@ void PIOUART::Poll()
             break;
         }  // switch(spiState)
 
-        Serial.print(spiState);
-        Serial.print(" ");
-#endif
-
-    //Serial.print(spiByte);
-    //Serial.print(" ");
-    spiMessage decodeMsg { 0, static_cast<float>(spiByte)/255.f };
-    Parse_(decodeMsg);    
-
     }  // serial_pio_.available()
 
     if (spiIdx >= static_cast<int>(kSlipBufferSize_)) {
         Serial.println("PIOUART- Buffer overrun!!!");
     }
-
+#endif  // USE_SERIAL_ADCS
 }
 
 void PIOUART::Parse_(spiMessage msg)
 {
     static const float kEventThresh = 0.01;
+    static const size_t kObservedChan = 0;
 
     if (msg.msg < value_states_.size()) {
-        //Serial.print(msg.value);
-        //Serial.print(" ");
         float filtered_value = filters_[msg.msg].process(msg.value);
-        //Serial.print(filtered_value);
-        //Serial.print(" ");
         float prev_value = value_states_[msg.msg];
         if (std::abs(filtered_value - prev_value) > kEventThresh) {
-            meml_interface.SetPot(msg.msg, filtered_value);
-            //Serial.print(filtered_value);
-            //Serial.print(" ");
-            meml_interface.UpdatePots();
+            meml_interface.SetPot(kNJoystickParams + msg.msg, filtered_value);
+            // Trigger param update (or NN inference)
+            gTriggerParamUpdate = true;
         }
-        Serial.print("Low:0.00,High:1.00,Value:");
-        Serial.print(msg.value);
-        Serial.print(",FilteredValue:");
-        Serial.println(filtered_value);
+        if (kObservedChan == msg.msg) {
+            Serial.print("Low:0.00,High:1.00,Value:");
+            Serial.print(msg.value, 8);
+            Serial.print(",FilteredValue:");
+            Serial.println(filtered_value, 8);
+        }
+        value_states_[msg.msg] = filtered_value;
     }
 }

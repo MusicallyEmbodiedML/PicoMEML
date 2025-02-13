@@ -35,8 +35,7 @@ static const float constant_weight_init = 0;
 static input_data_t kZoom_mode_reset;
 
 // Dataset memory
-static char dataset_mem_[kMaxDatasets][sizeof(Dataset)];
-static Dataset *dataset_[kMaxDatasets] = { nullptr };
+static Dataset dataset_[kMaxDatasets];
 static size_t ds_n_ = 0;
 
 // MLP memory
@@ -65,7 +64,7 @@ std::deque<float> inputRB; //ring buffer for inputs. Maybe a more efficient way 
 
 void mlp_init(queue_t *nn_paramupdate, size_t n_inputs, size_t n_params, size_t n_inputbuffer)
 {
-    Serial.printf("MLP Init %d\n", n_params);
+    Serial.printf("MLP- Initialise with: %d -> %d\n", n_inputs, n_params);
 
     n_inputs *= n_inputbuffer;
     // fill up a ring buffer
@@ -75,7 +74,7 @@ void mlp_init(queue_t *nn_paramupdate, size_t n_inputs, size_t n_params, size_t 
             inputRB.push_back(0);
         }
     }
-    
+
     const std::vector<size_t> layers_nodes = {
         n_inputs + kBias,
         10, 10, 14,
@@ -87,8 +86,10 @@ void mlp_init(queue_t *nn_paramupdate, size_t n_inputs, size_t n_params, size_t 
     // Instantiate objects
     assert(kMaxDatasets == kMaxModels);
     for (size_t n = 0; n < kMaxModels; n++) {
-        dataset_[n] = new(dataset_mem_[n]) Dataset();
-        
+        //Serial.println("Creating dataset...");
+        //dataset_[n] = new(dataset_mem_[n]) Dataset();
+        //Serial.println("--- We got here!");
+
         mlp_[n] = new (std::nothrow) MLP<float>(
             layers_nodes,
             layers_activfuncs,
@@ -139,7 +140,7 @@ void mlp_train()
     Serial.print("MLP- zoom: ");
     Serial.println(flag_zoom_in_);
 
-    MLP<float>::training_pair_t dataset(dataset_[ds_n_]->GetFeatures(), dataset_[ds_n_]->GetLabels());
+    MLP<float>::training_pair_t dataset(dataset_[ds_n_].GetFeatures(), dataset_[ds_n_].GetLabels());
 
     // Check and report on dataset size
     Serial.print("MLP- Feature size ");
@@ -242,7 +243,7 @@ void mlp_draw(float speed)
 
 void mlp_add_data_point(const std::vector<float> &in, const std::vector<float> &out)
 {
-    dataset_[ds_n_]->Add(in, out);
+    dataset_[ds_n_].Add(in, out);
     mlp_trigger_redraw_();
 }
 
@@ -256,13 +257,13 @@ for(size_t i=0; i < in.size(); i++) {
 void mlp_add_data_point_tdnn(const std::vector<float> &in, const std::vector<float> &out)
 {
     std::vector<float> inputVector(inputRB.begin(), inputRB.end());
-    dataset_[ds_n_]->Add(inputVector, out);
+    dataset_[ds_n_].Add(inputVector, out);
     mlp_trigger_redraw_();
 }
 
 void mlp_clear_data()
 {
-    dataset_[ds_n_]->Clear();
+    dataset_[ds_n_].Clear();
     Serial.print("MLP- Dataset ");
     Serial.print(ds_n_);
     Serial.print(" cleared.");

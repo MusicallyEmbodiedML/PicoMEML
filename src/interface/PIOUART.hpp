@@ -10,8 +10,6 @@
 #include <array>
 
 
-static const size_t kNExtraSensors = 1;
-
 class PIOUART {
 
  public:

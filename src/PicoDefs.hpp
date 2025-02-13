@@ -14,6 +14,21 @@
 #define AUDIO_MEM    __not_in_flash("audio")  ///< Macro to make variable load from mem
 
 
+// Enable or disable joystick
+#define USE_JOYSTICK         0
+// Enable or disable extra sensors via UART
+#define USE_SERIAL_ADCS      1
+// Set how many joystick params
+#define JOYSTICK_PARAMS      3
+// Set how many extra sensors
+#define SERIAL_ADC_PARAMS    1
+
+const size_t kNJoystickParams = ((USE_JOYSTICK) ? JOYSTICK_PARAMS : 0);
+// Set how many extra sensors we want to process/use
+const size_t kNExtraSensors = ((USE_SERIAL_ADCS) ? SERIAL_ADC_PARAMS : 0);
+
+const size_t kNInputParams = kNJoystickParams + kNExtraSensors;
+
 /**
  * @brief Pin configuration on the Pi Pico 2
  */
@@ -61,5 +76,7 @@ enum PinConfig {
 extern ts_app_state gAppState;
 /** Global MEML interface (define only once). */
 extern MEMLInterface meml_interface;
+
+extern bool gTriggerParamUpdate;
 
 #endif  // __PICO_DEFS_HPP__
