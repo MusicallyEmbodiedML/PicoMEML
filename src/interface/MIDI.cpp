@@ -28,12 +28,12 @@ void MIDIDevice::SendParamsAsCC(std::vector<float> params)
     size_t vec_size = params.size();
     size_t param_size = kNCCs < vec_size ? kNCCs : vec_size;
 
-    //for (size_t n = 0; n < param_size; n++) {
-        //SendCC(n + kCCStart, static_cast<int8_t>(params[n] * 127));
-        //Serial.print(n);
-        //Serial.print(" ");
-    //}
+    for (size_t n = 0; n < param_size; n++) {
+        SendCC(n + kCCStart, static_cast<int8_t>(params[n] * 127));
+        // Serial.print(n);
+        // Serial.print(" ");
+    }
     //Serial.println("");
-    SendCC(1, static_cast<int8_t>(params[0] * 127));
+    // SendCC(1, static_cast<int8_t>(params[0] * 127));
 }
 
