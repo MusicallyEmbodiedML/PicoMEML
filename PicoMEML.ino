@@ -63,6 +63,7 @@ MEMLInterface meml_interface(
 #elif EUCLIDEAN
     &EuclideanSeqApp::GenParams,
 #endif  // FM_SYNTH
+    sizeof(ts_joystick_read)/sizeof(float),
     kN_synthparams
 );
 
