@@ -63,8 +63,8 @@ void ButtonsPots::Process(void)
             pot_state_[n] = pot_current_[n];
             pot_changed = true;
             // Pot action
-            meml_interface.SetPot(static_cast<te_joystick_pot>(n),
-                    _sat(pot_state_[n] * kPotScaling));
+            //meml_interface.SetPot(static_cast<te_joystick_pot>(n),
+            //        _sat(pot_state_[n] * kPotScaling));
         }
     }
     if (pot_changed) {
@@ -80,7 +80,7 @@ void ButtonsPots::Process(void)
         Serial.print(", ");
         Serial.println(joystick_read.potRotate);
         // Pot action
-        meml_interface.UpdatePots();
+        //meml_interface.UpdatePots();
     }
 
     if (!button_isr_) {

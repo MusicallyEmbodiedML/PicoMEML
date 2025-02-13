@@ -5,7 +5,12 @@
 #include "../PicoDefs.hpp"
 #include <Arduino.h>
 #include <SoftwareSerial.h>
+#include "../utils/MedianFilter.h"
 
+#include <array>
+
+
+static const size_t kNExtraSensors = 1;
 
 class PIOUART {
 
@@ -13,11 +18,12 @@ class PIOUART {
     PIOUART(size_t baud_rate = 115200);
     void Poll();
 
-
  protected:
     static const size_t kSlipBufferSize_ = 64;
     SerialPIO serial_pio_;
     uint8_t slipBuffer[kSlipBufferSize_];
+    std::array<MedianFilter<float>, kNExtraSensors> filters_;
+    std::array<float, kNExtraSensors> value_states_;
 
     struct spiMessage {
     uint8_t msg;

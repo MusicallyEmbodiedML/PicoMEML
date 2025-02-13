@@ -123,7 +123,7 @@ void AUDIO_FUNC(loop)() {
         // on core 1
         std::vector<float> audio_params(kN_synthparams);
         if (queue_try_remove(&queue_audioparam, audio_params.data())) {
-            Serial.println("A- Audio params received.");
+            // Serial.println("A- Audio params received.");
             AudioAppSetParams(audio_params);
         }
     }
@@ -195,7 +195,7 @@ void loop1() {
         //Serial.println(".");
         std::vector<float> params;
         AnalysisParamsRead(params);
-        Serial.println(params[0]);
+        //Serial.println(params[0]);
     }
 #endif
 
