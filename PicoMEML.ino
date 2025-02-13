@@ -16,9 +16,11 @@
 
 #include <cstdint>
 #include <vector>
+#include <memory>
 
 #include "pico/util/queue.h"
 #include "src/audio/AnalysisParams.hpp"
+#include "src/interface/PIOUART.hpp"
 
 //for random bits
 #include "hardware/clocks.h"
@@ -141,6 +143,7 @@ void AUDIO_FUNC(loop)() {
     }
 }
 
+std::unique_ptr<PIOUART> pio_uart;
 
 void setup1() {
     // Init serial and signal other core
@@ -163,6 +166,8 @@ void setup1() {
     mlp_init(&queue_audioparam,
              sizeof(ts_joystick_read)/sizeof(float),
              kN_synthparams);
+    // PIO UART
+    pio_uart = std::make_unique<PIOUART>();
 
     // Wait for init sync
     flag_init_1 = true;
@@ -174,6 +179,8 @@ void setup1() {
 void loop1() {
     // Read ADC
     ButtonsPots::Process();
+    // Read PIO UART
+    pio_uart->Poll();
 
     static constexpr uint32_t period_ms = 10;
     // Pulse
