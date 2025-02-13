@@ -176,8 +176,8 @@ void ButtonsPots::ButtonISR(void)
     for (unsigned int n = 0; n < kNButtons; n++) {
         PinConfig pin_n = Buttons[n];
         bool button_current_state = digitalRead(pin_n);
-        
+
         ProcessButton_(pin_n, n, button_current_state);
- 
+
     }
 }

@@ -34,8 +34,8 @@ class ButtonsPots {
         button_Randomise,
         toggle_Training,
         button_ClearData,
-        button_ZoomOut,
-        button_ZoomIn
+        //button_ZoomOut,
+        //button_ZoomIn
     };
     /** Number of pins that are buttons */
     static constexpr size_t kNButtons = sizeof(Buttons)/sizeof(PinConfig);
