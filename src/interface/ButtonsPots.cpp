@@ -53,6 +53,7 @@ float _sat(float x) {
 
 void ButtonsPots::Process(void)
 {
+
     static constexpr float kPotThreshold = 100.f;
     static constexpr float kPotScaling = 1.f / static_cast<float>(1 << 10);
 

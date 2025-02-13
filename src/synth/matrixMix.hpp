@@ -5,7 +5,9 @@
 #include <vector>
 #include <array>
 #include "maximilian.h"
+#include "maxiFFT.h"
 #include "OnePoleSmoother.hpp"
+
 
 #define PERIODIC_DEBUG(COUNT, FUNC) \
         static size_t ct=0; \
@@ -13,7 +15,7 @@
             FUNC         \
         }
 
-const size_t kN_synthparams = 30;
+const size_t kN_synthparams = 16;
 
 inline float vox_fasttanh_ultra( const float x )
 {
@@ -106,6 +108,12 @@ public:
         mmix.setDirectFeedbackScaling(0.0);
         unsmoothParams.resize(kN_synthparams);
         params.resize(kN_synthparams);
+        fft.setup(512,256,512);
+        ifft.setup(512,256,512);
+        mags.resize(256);
+        mags2.resize(256);
+        phases.resize(256);
+        phases2.resize(256);
                 
     }
 
@@ -121,59 +129,80 @@ public:
 
     float play(float x) {
         smoother_.Process(unsmoothParams.data(), params.data());
+        // PERIODIC_DEBUG(1000,
+        //     Serial.printf("fft info %d\t%d\n", fft.pos, fft.buffer.size());
+        // )
+        size_t tsfft, tsifft;
+        auto ts = micros();
+        if (fft.process(x)) {
+            Serial.println(fft.getMagnitudes()[3]);
+            tsfft=micros() - ts;
 
-        mmix.set(params);
-        const size_t ofs = NFX*NFX; //offset from mixer params
-        fxInputs[0] = x * params[ofs+0] * params[ofs+0];
-        fxInputs[1] = x * params[ofs+1] * params[ofs+1];
-        fxInputs[2] = x * params[ofs+2] * params[ofs+2];
-        fxInputs[3] = x * params[ofs+3] * params[ofs+3];
+            mags = fft.getMagnitudes();
+            phases = fft.getMagnitudes();
+            Serial.printf("fft: %u\n", tsfft);
+        }
+        // ts = micros();
+        // x = ifft.process(mags, phases);
+        // if (ifft.newcalc) {
+        //     tsifft = micros() - ts;
+        //     // Serial.printf("ifft: %u\n", tsifft);
+        // }
+
+        // return x;
+        // mmix.set(params);
+        // const size_t ofs = NFX*NFX; //offset from mixer params
+        // fxInputs[0] = x * params[ofs+0];
+        // fxInputs[1] = x * params[ofs+1];
+        // fxInputs[2] = x * params[ofs+2];
+        // fxInputs[3] = x * params[ofs+3];
 
 
-        float flangeInput = (mmix.calculateMix(fxOutputs, 0) + fxInputs[0]);
-        float flange = flanger.flange(flangeInput, params[ofs+4] * 10000 + 100, params[ofs+5] * 0.99, params[ofs+6] * 0.99f, params[ofs+7]);
+        // float flangeInput = (mmix.calculateMix(fxOutputs, 0) + fxInputs[0]);
+        // float flange = flanger.flange(flangeInput, params[ofs+4] * 10000 + 100, params[ofs+5] * 0.99, params[ofs+6] * 0.99f, params[ofs+7]);
 
-        // // float distInput = (mmix.calculateMix(fxOutputs, 1) + fxInputs[1]) * 0.5;
-        // // float dist = distortion.fastAtanDist(distInput, params[ofs+8] * 2);
+        // // // float distInput = (mmix.calculateMix(fxOutputs, 1) + fxInputs[1]) * 0.5;
+        // // // float dist = distortion.fastAtanDist(distInput, params[ofs+8] * 2);
         
 
-        float filterInput = (mmix.calculateMix(fxOutputs, 1) + fxInputs[1]) * 0.5;
-        float filtered = filt.play(filterInput);
+        // float filterInput = (mmix.calculateMix(fxOutputs, 1) + fxInputs[1]) * 0.5;
+        // float filtered = filt.play(filterInput);
 
-        // // PERIODIC_DEBUG(3000,
-        // //     printf("%f\t%f\t%f\n", rmMod, rmInput, params[ofs+8]);
-        // // )
+        // // // PERIODIC_DEBUG(3000,
+        // // //     printf("%f\t%f\t%f\n", rmMod, rmInput, params[ofs+8]);
+        // // // )
         // float delayInput2 = (mmix.calculateMix(fxOutputs,1) + fxInputs[1]) * 0.5;
         // float delayed2 = dl.play(delayInput2, params[ofs+3] * 10000 + 100, params[ofs+8] * 0.95);
 
 
-        float delayInput = (mmix.calculateMix(fxOutputs, 2) + fxInputs[2]) * 0.5;
-        float delayed = dl.play(delayInput, params[ofs+9] * 10000 + 100, params[ofs+10] * 0.95);
+        // float delayInput = (mmix.calculateMix(fxOutputs, 2) + fxInputs[2]) * 0.5;
+        // float delayed = dl.play(delayInput, params[ofs+9] * 10000 + 100, params[ofs+10] * 0.95);
 
 
-        float rmMod = sinosc.sinebuf(1.f + (params[ofs+11] * params[ofs+11] * 800));
-        float rmInput = (mmix.calculateMix(fxOutputs, 3) + fxInputs[3]) * 0.5;
-        float rmSig = rmInput * rmMod;
+        // float rmMod = sinosc.sinebuf(1.f + (params[ofs+11] * params[ofs+11] * 800));
+        // float rmInput = (mmix.calculateMix(fxOutputs, 3) + fxInputs[3]) * 0.5;
+        // float rmSig = rmInput * rmMod;
         
-        fxOutputs[0] = flange;
-        fxOutputs[1] = filtered;
-        fxOutputs[2] = delayed;
-        fxOutputs[3] = rmSig;
-
-        // x = fxOutputs[0] + fxOutputs[1] + fxOutputs[2];
-        x = fxOutputs[0] + fxOutputs[1] + fxOutputs[2] + fxOutputs[3];
+        // fxOutputs[0] = flange;
+        // fxOutputs[1] = filtered;
+        // fxOutputs[2] = delayed;
+        // fxOutputs[3] = rmSig;    
+        // x = x + dl.play(x, 3000, 0.9) + dl2.play(x, 2000, 0.9) + dl3.play(x, 1000, 0.9) + dl4.play(x, 500, 0.9) + dl5.play(x, 300, 0.9);
+        // x *= 0.5;
+        // x = fxOutputs[2];
+        // x = fxOutputs[0] + fxOutputs[1] + fxOutputs[2] + fxOutputs[3];
         // // x = flanger.flange(flangeInput, params[ofs+4] * 6000 + 100, params[ofs+5] * 0.98, params[ofs+6] * 0.95f, params[ofs+7]);
         return x;
     }
 
     void mapParameters(std::vector<float> &newparams) {
-        for(size_t i=0; i < params.size(); i++) {
+        for(size_t i=0; i < newparams.size(); i++) {
             unsmoothParams[i] = newparams[i];
         }
-        filt.set(maxiBiquad::filterTypes::HIGHPASS, unsmoothParams[17] * 5000.f, 2, 1);
+        // filt.set(maxiBiquad::filterTypes::HIGHPASS, unsmoothParams[17] * 5000.f, 2, 1);
 
 
-        // PERIODIC_DEBUG(6000,
+        // Serial.printf("map: core: %d\n", get_core_num());
             // printf("1-----\n");
             // union {float f; uint32_t i;} pu;
             // for(size_t i=0; i < newparams.size(); i++) {
@@ -189,12 +218,15 @@ public:
             //     printf("%x\t", pu.i);
             // }
             // printf("\n");
-        // )
     }
 
 private:
     maxiNonlinearity distortion;
-    maxiDelayline<15000> dl;
+    maxiDelayline<5000> dl;
+    maxiDelayline<5000> dl2;
+    maxiDelayline<5000> dl3;
+    maxiDelayline<5000> dl4;
+    maxiDelayline<5000> dl5;
     maxiFlanger<15000> flanger;
     maxiOsc sinosc;
     maxiBiquad filt;
@@ -206,6 +238,13 @@ private:
 
     std::vector<float> unsmoothParams, params;
     OnePoleSmoother<kN_synthparams> smoother_;
+
+    maxiFFT fft;
+    maxiIFFT ifft;
+    std::vector<float> mags;
+    std::vector<float> mags2;
+    std::vector<float> phases;
+    std::vector<float> phases2;    
 
 };
 

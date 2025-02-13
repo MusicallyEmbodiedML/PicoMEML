@@ -16,7 +16,7 @@
 #if FM_SYNTH
 static AUDIO_MEM FMSynth fm_synth_(kSampleRate);
 #elif FX_PROCESSOR
-static AUDIO_MEM MaxtrixMixApp multi_fx_app_(kSampleRate);
+static MaxtrixMixApp multi_fx_app_(kSampleRate);
 #elif EUCLIDEAN
 static AUDIO_MEM EuclideanSeqApp euclideanApp;
 #endif  // FM_SYNTH
