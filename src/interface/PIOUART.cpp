@@ -30,8 +30,7 @@ void PIOUART::Poll()
 #if USE_SERIAL_ADCS
     uint8_t spiByte = 32;
 
-    while (serial_pio_.available()) {
-
+ 
     while (serial_pio_.available()) {
         spiByte = serial_pio_.read();
 
