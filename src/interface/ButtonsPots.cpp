@@ -53,6 +53,7 @@ float _sat(float x) {
 
 void ButtonsPots::Process(void)
 {
+#if USE_JOYSTICK
     static constexpr float kPotThreshold = 100.f;
     static constexpr float kPotScaling = 1.f / static_cast<float>(1 << 10);
 
@@ -73,15 +74,16 @@ void ButtonsPots::Process(void)
             _sat(pot_state_[1] * kPotScaling),
             _sat(pot_state_[2] * kPotScaling),
         };
-        Serial.print("Joystick: ");
+        Serial.print("X:");
         Serial.print(joystick_read.potX);
-        Serial.print(", ");
+        Serial.print(",Y:");
         Serial.print(joystick_read.potY);
-        Serial.print(", ");
+        Serial.print(",Rotate:");
         Serial.println(joystick_read.potRotate);
         // Pot action
-        meml_interface.UpdatePots();
+        gTriggerParamUpdate = true;
     }
+#endif  // USE_JOYSTICK
 
     if (!button_isr_) {
         for (unsigned int n = 0; n < kNButtons; n++) {
