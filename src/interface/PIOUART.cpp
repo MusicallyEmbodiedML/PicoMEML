@@ -17,7 +17,7 @@ void PIOUART::Poll()
 {
     uint8_t spiByte=0;
 
-    if (serial_pio_.available()) {
+    while (serial_pio_.available()) {
 
         switch(spiState) {
             case SPISTATES::WAITFOREND:
