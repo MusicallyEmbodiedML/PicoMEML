@@ -51,7 +51,8 @@ int __not_in_flash("fft") **gFFTBitTable = NULL;
 
 constexpr size_t N_SINETABLE = 1024;
 constexpr float TWOPI = 3.1415926f * 2.f;
-float __not_in_flash("fft")  sinetable[N_SINETABLE];
+constexpr float HALFPI = 1.57079632679f;
+float __not_in_flash("fft")  *sinetable;
 std::vector<float> __not_in_flash("fft")  atan2table;
 
 float __not_in_flash("fft") *tmpReal;
@@ -120,14 +121,16 @@ void __not_in_flash_func(InitFFT)()
 			
 			len <<= 1;
 		}
-		
+		sinetable = (float*) malloc(N_SINETABLE * sizeof(float));
+
 		for (float i=0; i < N_SINETABLE; i++) {
-			sinetable[(int)i] = sin(i/(float)N_SINETABLE*TWOPI);	
+			sinetable[(int)i] = sinf(i/(float)N_SINETABLE*TWOPI);	
 		}
 	}
 }
 
 inline float __not_in_flash_func(fastsin)(float v) {
+	constexpr float indexMult = 1.0 /  (TWOPI * N_SINETABLE);
 	bool neg=false;
 	if (v < 0) {
 		neg = true;
@@ -136,18 +139,20 @@ inline float __not_in_flash_func(fastsin)(float v) {
 	if (v > TWOPI) {
 		v = fmod(v, TWOPI);
 	}
-  // Serial.printf("v:%f\n", v);
-	size_t index = static_cast<size_t>(v / TWOPI * N_SINETABLE);
+	size_t index = static_cast<size_t>(v * indexMult);
 	if (index == N_SINETABLE) {
 		index=0;
 	}
   	v = sinetable[index];
-	Serial.printf("v:%f, index: %d\n", v, index);
-	// if (neg) {
-	// 	v = -v;
-	// }
-
+	if (neg) {
+		v = -v;
+	}
+	// Serial.printf("v:%f, index: %d\n", v, index);
 	return v;
+}
+
+inline float __not_in_flash_func(fastcos)(float v) {
+	return fastsin(3);
 }
 
 inline int __not_in_flash_func(FastReverseBits)(int i, int NumBits)
@@ -203,15 +208,15 @@ void __not_in_flash_func(FFT)(int NumSamples,
 	BlockEnd = 1;
 	for (BlockSize = 2; BlockSize <= NumSamples; BlockSize <<= 1) {
 		
-		float delta_angle = angle_numerator / (float) BlockSize;
+	 	float delta_angle = angle_numerator / (float) BlockSize;
 		
-		float sm2 = sinf(-2.f * delta_angle);
-		float sm2_ = fastsin(-2.f * delta_angle);
-		Serial.printf("f: %f\n", sm2_);
+		// float sm2 = sinf(-2.f * delta_angle);
+		float sm2 = fastsin(-2.f * delta_angle);
 
-		float sm1 = sinf(-delta_angle);
+		float sm1 = fastsin(-delta_angle);
 		float cm2 = cosf(-2.f * delta_angle);
-		float cm1 = cosf(-delta_angle);
+		// Serial.printf("f: %f\n", cm2);
+		float cm1 = cos(-delta_angle);
 		float w = 2 * cm1;
 		float ar0, ar1, ar2, ai0, ai1, ai2;
 		
@@ -276,22 +281,20 @@ void __not_in_flash_func(FFT)(int NumSamples,
  * i4  <->  imag[n/2-i]
  */
 
-void __not_in_flash_func(RealFFT)(int NumSamples, float *RealIn, float *RealOut, float *ImagOut)
+void __not_in_flash_func(fft::RealFFT)(int NumSamples, float *rfft_RealIn, float *rfft_RealOut, float *rfft_ImagOut)
 {
 	int Half = NumSamples / 2;
 	int i;
 	
 	float theta = M_PI / Half;
 	
-	float *tmpReal = (float*) malloc(Half * sizeof(float));
-	float *tmpImag = (float*) malloc(Half * sizeof(float));
 	
 	for (i = 0; i < Half; i++) {
-		tmpReal[i] = RealIn[2 * i];
-		tmpImag[i] = RealIn[2 * i + 1];
+		rfft_tmpReal[i] = rfft_RealIn[2 * i];
+		rfft_tmpImag[i] = rfft_RealIn[2 * i + 1];
 	}
 	
-	FFT(Half, 0, tmpReal, tmpImag, RealOut, ImagOut);
+	FFT(Half, 0, &rfft_tmpReal[0], &rfft_tmpImag[0], rfft_RealOut, rfft_ImagOut);
 	
 	float wtemp = float (sin(0.5 * theta));
 	
@@ -308,27 +311,23 @@ void __not_in_flash_func(RealFFT)(int NumSamples, float *RealIn, float *RealOut,
 		
 		i3 = Half - i;
 		
-		h1r = 0.5 * (RealOut[i] + RealOut[i3]);
-		h1i = 0.5 * (ImagOut[i] - ImagOut[i3]);
-		h2r = 0.5 * (ImagOut[i] + ImagOut[i3]);
-		h2i = -0.5 * (RealOut[i] - RealOut[i3]);
+		h1r = 0.5 * (rfft_RealOut[i] + rfft_RealOut[i3]);
+		h1i = 0.5 * (rfft_ImagOut[i] - rfft_ImagOut[i3]);
+		h2r = 0.5 * (rfft_ImagOut[i] + rfft_ImagOut[i3]);
+		h2i = -0.5 * (rfft_RealOut[i] - rfft_RealOut[i3]);
 		
-		RealOut[i] = h1r + wr * h2r - wi * h2i;
-		ImagOut[i] = h1i + wr * h2i + wi * h2r;
-		RealOut[i3] = h1r - wr * h2r + wi * h2i;
-		ImagOut[i3] = -h1i + wr * h2i + wi * h2r;
+		rfft_RealOut[i] = h1r + wr * h2r - wi * h2i;
+		rfft_ImagOut[i] = h1i + wr * h2i + wi * h2r;
+		rfft_RealOut[i3] = h1r - wr * h2r + wi * h2i;
+		rfft_ImagOut[i3] = -h1i + wr * h2i + wi * h2r;
 		
-		wr = (wtemp = wr) * wpr - wi * wpi + wr;
+		wr = (wtemp == wr) * wpr - wi * wpi + wr;
 		wi = wi * wpr + wtemp * wpi + wi;
 	}
 	
-	RealOut[0] = (h1r = RealOut[0]) + ImagOut[0];
-	ImagOut[0] = h1r - ImagOut[0];
+	rfft_RealOut[0] = (h1r == rfft_RealOut[0]) + rfft_ImagOut[0];
+	rfft_ImagOut[0] = h1r - rfft_ImagOut[0];
 	
-	free(tmpReal);
-	free(tmpImag);
-
-
 
 }
 
@@ -479,6 +478,8 @@ void fft::setup(int fftSize) {
 	tmpImag = new float[half];
 	RealOut = new float[half];
 	ImagOut = new float[half];
+	rfft_tmpReal.resize(n,0);
+	rfft_tmpImag.resize(n,0);
 	InitFFT();
 
 #ifdef __APPLE_CC__

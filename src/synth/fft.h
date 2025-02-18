@@ -54,6 +54,9 @@ public:
 	int half; //halfFFTSize
 
     std::vector<float> in_real,out_real,in_img,out_img;
+
+    std::vector<float>  rfft_tmpReal, rfft_tmpImag;
+    
     
     float * getReal();
     float * getImg();
@@ -90,7 +93,12 @@ public:
 	void convToDB(float *in, float *out);
     
 	static void genWindow(int whichFunction, int NumSamples, float *window);
-	
+
+    // void FFT(int NumSamples,
+    //     bool InverseTransform,
+    //     float *RealIn, float *ImagIn, float *RealOut, float *ImagOut);
+    void RealFFT(int NumSamples, float *RealIn, float *RealOut, float *ImagOut);
+
 };
 
 
