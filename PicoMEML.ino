@@ -41,7 +41,7 @@ static queue_t queue_interface_midi;
 static volatile bool flag_init_0 = false;
 static volatile bool flag_init_1 = false;
 
-const bool waitForSerialOnStart = true;
+const bool waitForSerialOnStart = false;
 
 // std::shared_ptr<MIDIDevice> devmidi;
 
@@ -218,7 +218,7 @@ void loop1() {
         //Serial.println(".");
         std::vector<float> params;
         AnalysisParamsRead(params);
-        //Serial.println(params[0]);
+        Serial.println(params[0]);
     }
 #endif
 

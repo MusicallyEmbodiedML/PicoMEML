@@ -54,31 +54,31 @@ void FMSynth::mapParameters(std::vector<float> &params) {
 
     *dest_ptr++ = 20 + ((*(params_ptr) * *(params_ptr)) * 5000);
     ++params_ptr;
-    *dest_ptr++ = 20 + ((*(params_ptr) * *(params_ptr)) * 5000);
+    *dest_ptr++ = 20 + ((*(params_ptr) * *(params_ptr)) * 3000);
     ++params_ptr;
-    *dest_ptr++ = (*(params_ptr++) * 100);
+    *dest_ptr++ = (*(params_ptr++) * 200);
 
     *dest_ptr++ = 20 + ((*(params_ptr) * *(params_ptr)) * 5000);
     ++params_ptr;
     *dest_ptr++ = 20 + ((*(params_ptr) * *(params_ptr)) * 5000);
     ++params_ptr;
-    *dest_ptr++ = (*(params_ptr++) * 100);
+    *dest_ptr++ = (*(params_ptr++) * 200);
 
-    *dest_ptr++ = (*(params_ptr++) * 100);
-
-    *dest_ptr++ = 20 + ((*(params_ptr) * *(params_ptr)) * 5000);
-    ++params_ptr;
-    *dest_ptr++ = 20 + ((*(params_ptr) * *(params_ptr)) * 5000);
-    ++params_ptr;
-    *dest_ptr++ =  (params[9] * 100);
+    *dest_ptr++ = (*(params_ptr++) * 200);
 
     *dest_ptr++ = 20 + ((*(params_ptr) * *(params_ptr)) * 5000);
     ++params_ptr;
+    *dest_ptr++ = 20 + ((*(params_ptr) * *(params_ptr)) * 1000);
+    ++params_ptr;
+    *dest_ptr++ =  (params[9] * 200);
+
     *dest_ptr++ = 20 + ((*(params_ptr) * *(params_ptr)) * 5000);
+    ++params_ptr;
+    *dest_ptr++ = 20 + ((*(params_ptr) * *(params_ptr)) * 800);
     ++params_ptr;
     *dest_ptr++ =  (*(params_ptr++) * 100);
 
-    *dest_ptr++ = (*(params_ptr++) * 100);
+    *dest_ptr++ = (*(params_ptr++) * 200);
 
 
 }
@@ -123,8 +123,8 @@ float FMSynth::process()
         envelope_smoother_.Process(&envelope, &envelope_smoothed);
         envelope = envelope_smoothed;
     } else {
-        carrier_1 = synthparams_smoothed[0];
-        carrier_2 = synthparams_smoothed[7];
+        carrier_1 = synthparams_smoothed[0] * 0.2f;
+        carrier_2 = synthparams_smoothed[7] * 0.6;
         envelope = 1.0f;
     }
 
