@@ -5,8 +5,8 @@
 #include "interface/MEMLInterface.hpp"
 
 // Select which example app to run
-#define FM_SYNTH         1  ///< FM Synth (new macro)
-#define FX_PROCESSOR     0  ///< FX Processor (new macro)
+#define FM_SYNTH         0  ///< FM Synth (new macro)
+#define FX_PROCESSOR     1  ///< FX Processor (new macro)
 #define EUCLIDEAN        0
 
 
@@ -15,9 +15,9 @@
 
 
 // Enable or disable joystick
-#define USE_JOYSTICK         0
+#define USE_JOYSTICK         1
 // Enable or disable extra sensors via UART
-#define USE_SERIAL_ADCS      1
+#define USE_SERIAL_ADCS      0
 // Set how many joystick params
 #define JOYSTICK_PARAMS      3
 // Set how many extra sensors

@@ -1,3 +1,5 @@
+#include <MIDI.h>
+
 #include "src/PicoDefs.hpp"
 #include "src/audio/AudioDriver.hpp"
 #include "src/audio/AudioApp.hpp"
@@ -18,6 +20,7 @@
 #include <vector>
 #include <memory>
 
+
 #include "pico/util/queue.h"
 #include "src/audio/AnalysisParams.hpp"
 #include "src/interface/PIOUART.hpp"
@@ -25,6 +28,8 @@
 //for random bits
 #include "hardware/clocks.h"
 #include "hardware/structs/rosc.h"
+
+// #include "src/interface/MIDI.hpp"
 
 // Core 0->1 comms
 const size_t kSharedMemSize = 1;
@@ -38,6 +43,7 @@ static volatile bool flag_init_1 = false;
 
 const bool waitForSerialOnStart = true;
 
+// std::shared_ptr<MIDIDevice> devmidi;
 
 // Global app state
 ts_app_state gAppState = {
@@ -149,7 +155,7 @@ void setup1() {
     if (waitForSerialOnStart){
         while(!Serial) {;}
     }
-
+    // devmidi = make_shared<MIDIDevice>();
     Serial.println("Core 1 Start");
     // Core INTERFACE routine setup
     queue_init(&queue_audioparam, sizeof(float)*kN_synthparams, 1);
@@ -164,7 +170,10 @@ void setup1() {
     // MLP setup
     mlp_init(&queue_audioparam,
              kNInputParams,
-             kN_synthparams);
+             kN_synthparams,
+             1);
+            //  ,
+            //  devmidi);
     // PIO UART
     pio_uart = std::make_unique<PIOUART>();
     // Report how many input parameters are there
@@ -192,6 +201,13 @@ void loop1() {
     static constexpr uint32_t period_ms = 10;
     // Pulse
 #if 1
+    // MIDIMessage msg = devmidi->Read();
+    // if (msg.received) {
+      // Serial.println(msg.msgType);
+      // if (msg.msgType == midi::MidiType::NoteOn) {
+      //   Serial.println("note");
+      // };
+    // }
     static constexpr float pulse_every_s = 1;
     static constexpr float count_wraparound = (1000.f * pulse_every_s)
             / static_cast<float>(period_ms);

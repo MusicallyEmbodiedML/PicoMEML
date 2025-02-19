@@ -3,7 +3,6 @@
 #include "../mlp/Data.h"
 #include "../mlp/Dataset.hpp"
 #include "../utils/PrintVector.hpp"
-#include "MIDI.hpp"
 
 #include <algorithm>
 #include <cmath>
@@ -51,7 +50,7 @@ static bool flag_zoom_in_ = false;
 static float speed_ = 1.0f;
 static size_t nn_n_ = 0;
 
-static std::unique_ptr<MIDIDevice> midi_;
+static std::shared_ptr<MIDIDevice> midi_;
 
 
 /******************************
@@ -62,7 +61,7 @@ queue_t *nn_paramupdate_ = nullptr;
 
 std::deque<float> inputRB; //ring buffer for inputs. Maybe a more efficient way to do this?
 
-void mlp_init(queue_t *nn_paramupdate, size_t n_inputs, size_t n_params, size_t n_inputbuffer)
+void mlp_init(queue_t *nn_paramupdate, size_t n_inputs, size_t n_params, size_t n_inputbuffer, std::shared_ptr<MIDIDevice> _midiDev)
 {
     Serial.printf("MLP- Initialise with: %d -> %d\n", n_inputs, n_params);
 
@@ -113,7 +112,7 @@ void mlp_init(queue_t *nn_paramupdate, size_t n_inputs, size_t n_params, size_t 
     zoom_mode_centre_.resize(n_inputs, init_val);
     mlp_stored_input.resize(n_inputs, init_val);
 
-    midi_ = std::make_unique<MIDIDevice>();
+    // midi_ = _midiDev;
 
     Serial.println("MLP- Initialised.");
 
@@ -395,5 +394,5 @@ void mlp_inference(input_data_t joystick_read) {
     );
 
     // Send MIDI
-    midi_->SendParamsAsCC(mlp_stored_output);
+    // midi_->SendParamsAsCC(mlp_stored_output);
 }
