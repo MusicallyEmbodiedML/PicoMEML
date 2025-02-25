@@ -163,9 +163,9 @@ void mlp_train()
     Serial.print(gAppState.n_iterations);
     Serial.println(" iterations...");
     num_t loss = mlp_[nn_n_]->Train(dataset,
-              1.,
+              1.f,
               gAppState.n_iterations,
-              0.0001,
+              0.f,
               false);
     Serial.print("MLP- Trained, loss = ");
     Serial.println(loss, 10);
@@ -347,6 +347,8 @@ void mlp_set_dataset_idx(size_t idx)
 
 void mlp_inference(input_data_t joystick_read) {
 
+    int64_t timer_start = time_us_64();
+
     // Function to zoom and offset by given range
     static const auto zoom_in_ = [](float x, float move_by) {
         float local_range = 0.5f*speed_;
@@ -396,4 +398,10 @@ void mlp_inference(input_data_t joystick_read) {
 
     // Send MIDI
     midi_->SendParamsAsCC(mlp_stored_output);
+
+    int64_t timer_end = time_us_64();
+
+    Serial.print("INFERENCE time: ");
+    Serial.print(timer_end-timer_start);
+    Serial.println(" microseconds.");
 }

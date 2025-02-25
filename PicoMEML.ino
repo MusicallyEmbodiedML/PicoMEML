@@ -202,7 +202,7 @@ void loop1() {
         //Serial.println(".");
         std::vector<float> params;
         AnalysisParamsRead(params);
-        //Serial.println(params[0]);
+        Serial.println(params[0]);
     }
 #endif
 

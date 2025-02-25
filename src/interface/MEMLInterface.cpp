@@ -156,9 +156,6 @@ void MEMLInterface::SetToggleButton(te_button_idx button_n, int8_t state)
                     if (mlp_stored_output.size() > 0) {
                         // Save data point
                         std::vector<num_t> input(joystick_current_);
-                        input.push_back(
-                            1.f  // bias
-                        );
                         mlp_add_data_point(
                             input, mlp_stored_output
                         );

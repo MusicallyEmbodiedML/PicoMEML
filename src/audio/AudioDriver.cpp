@@ -21,7 +21,7 @@ const float AUDIO_MEM amplitude = 1 << (bitsPerSample - 2); // amplitude of squa
 const float AUDIO_MEM neg_amplitude = -amplitude; // amplitude of square wave = 1/2 of maximum
 const float AUDIO_MEM one_over_amplitude = 1.f / amplitude;
 
-int32_t AUDIO_MEM sample = amplitude; // current sample value
+int32_t sample = amplitude; // current sample value
 
 AudioControlSGTL5000 codecCtl;
 
