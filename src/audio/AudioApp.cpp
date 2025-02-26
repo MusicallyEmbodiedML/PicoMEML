@@ -24,11 +24,11 @@ static AUDIO_MEM EuclideanSeqApp euclideanApp;
 
 void AudioAppSetup(void)
 {
-    maxiSettings::setup(kSampleRate, 1, 64);
 #if FM_SYNTH
-    fm_synth_.EnableMIDI(false);
+maxiSettings::setup(kSampleRate, 1, 64);
+fm_synth_.EnableMIDI(false);
 #elif EUCLIDEAN
-    euclideanApp.init(kSampleRate);
+euclideanApp.init(kSampleRate);
 #endif
 }
 
