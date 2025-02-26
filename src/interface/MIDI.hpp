@@ -6,13 +6,20 @@
 #include <SoftwareSerial.h>
 #include "../PicoDefs.hpp"
 
+struct MIDIMessage {
+   midi::MidiType msgType;
+   uint8_t data1;
+   uint8_t data2;
+   bool received;
+};
 
 class MIDIDevice {
  public:
     MIDIDevice(int rx_pin = uart_MidiRX, int tx_pin = uart_MidiTX);
     void SendCC(size_t cc_index, int8_t val);
     void SendParamsAsCC(std::vector<float>params);
-
+    MIDIMessage Read();
+    
  protected:
 
     using Transport = MIDI_NAMESPACE::SerialMIDI<SoftwareSerial>;
@@ -23,7 +30,5 @@ class MIDIDevice {
     size_t midi_out_chan_;
 };
 
-
-extern MIDIDevice gMIDIDevice;
 
 #endif  // __MIDI_HPP__

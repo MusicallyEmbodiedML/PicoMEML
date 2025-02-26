@@ -5,15 +5,20 @@
 #include "../PicoDefs.hpp"
 
 #include <vector>
+#include <memory>
+
+#include "MIDI.hpp"
+
 #include "pico/util/queue.h"
 
 
 using input_data_t = std::vector<float>;
 
 void mlp_init(queue_t *nn_paramupdate,
-              size_t n_inputs,
-              size_t n_params,
-              size_t n_inputbuffer = 1);
+        size_t n_inputs,
+        size_t n_params,
+        size_t n_inputbuffer,
+        std::shared_ptr<MIDIDevice> _midiDev = nullptr);
 void mlp_inference(input_data_t joystick_read);
 void mlp_train();
 void mlp_draw(float speed = 0.01);

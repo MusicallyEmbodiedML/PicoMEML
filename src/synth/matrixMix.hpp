@@ -103,7 +103,7 @@ public:
 
     MaxtrixMixApp(size_t sample_rate): smoother_(100.f, sample_rate) {
         maxiSettings::setup(sample_rate, 1, 16);
-        mmix.setDirectFeedbackScaling(0.0);
+        mmix.setDirectFeedbackScaling(0.5);
         unsmoothParams.resize(kN_synthparams);
         params.resize(kN_synthparams);
                 
@@ -124,21 +124,25 @@ public:
 
         mmix.set(params);
         const size_t ofs = NFX*NFX; //offset from mixer params
-        fxInputs[0] = x * params[ofs+0] * params[ofs+0];
-        fxInputs[1] = x * params[ofs+1] * params[ofs+1];
-        fxInputs[2] = x * params[ofs+2] * params[ofs+2];
-        fxInputs[3] = x * params[ofs+3] * params[ofs+3];
+        fxInputs[0] = x * params[ofs+0];
+        fxInputs[1] = x * params[ofs+1];
+        fxInputs[2] = x * params[ofs+2];
+        fxInputs[3] = x * params[ofs+3];
 
 
         float flangeInput = (mmix.calculateMix(fxOutputs, 0) + fxInputs[0]);
-        float flange = flanger.flange(flangeInput, params[ofs+4] * 10000 + 100, params[ofs+5] * 0.99, params[ofs+6] * 0.99f, params[ofs+7]);
+        // float flange = flanger.flange(flangeInput, params[ofs+4] * 10000 + 100, params[ofs+5] * 0.99, params[ofs+6] * 0.99f, params[ofs+7]);
+        float flange = flanger.flange(flangeInput, 800, params[ofs+5] * 0.99, params[ofs+6] * 10.f, 0.5 + (params[ofs+7] * 0.5));
+        // PERIODIC_DEBUG(5000,
+        //     Serial.printf("%f\t%f\t%f\n", flangeInput, params[ofs+0], params[ofs+6]);
+        // )
 
-        // // float distInput = (mmix.calculateMix(fxOutputs, 1) + fxInputs[1]) * 0.5;
-        // // float dist = distortion.fastAtanDist(distInput, params[ofs+8] * 2);
+        float distInput = (mmix.calculateMix(fxOutputs, 1) + fxInputs[1]);
+        float dist = distortion.softclip(distInput *  params[ofs+4] * 2) * 0.3;
         
 
-        float filterInput = (mmix.calculateMix(fxOutputs, 1) + fxInputs[1]) * 0.5;
-        float filtered = filt.play(filterInput);
+        // float filterInput = (mmix.calculateMix(fxOutputs, 1) + fxInputs[1]) * 0.5;
+        // float filtered = filt.play(filterInput);
 
         // // PERIODIC_DEBUG(3000,
         // //     printf("%f\t%f\t%f\n", rmMod, rmInput, params[ofs+8]);
@@ -148,20 +152,22 @@ public:
 
 
         float delayInput = (mmix.calculateMix(fxOutputs, 2) + fxInputs[2]) * 0.5;
-        float delayed = dl.play(delayInput, params[ofs+9] * 10000 + 100, params[ofs+10] * 0.95);
+        float delayed = dl.play(delayInput, 3000, params[ofs+10] * 0.99) 
+        + dl2.play(delayInput, 300, params[ofs+9] * 0.99);
+        // float delayed = dl.play(delayInput, params[ofs+9] * 10000 + 100, params[ofs+10] * 0.95);
 
 
         float rmMod = sinosc.sinebuf(1.f + (params[ofs+11] * params[ofs+11] * 800));
-        float rmInput = (mmix.calculateMix(fxOutputs, 3) + fxInputs[3]) * 0.5;
+        float rmInput = (mmix.calculateMix(fxOutputs, 3) + fxInputs[3]);
         float rmSig = rmInput * rmMod;
         
-        fxOutputs[0] = flange;
-        fxOutputs[1] = filtered;
-        fxOutputs[2] = delayed;
-        fxOutputs[3] = rmSig;
+        fxOutputs[0] = std::tanh(flange);
+        fxOutputs[1] = std::tanh(dist); //filtered;
+        fxOutputs[2] = std::tanh(delayed);
+        fxOutputs[3] = std::tanh(rmSig); //rmSig;
 
         // x = fxOutputs[0] + fxOutputs[1] + fxOutputs[2];
-        x = fxOutputs[0] + fxOutputs[1] + fxOutputs[2] + fxOutputs[3];
+        x = (fxOutputs[0] + fxOutputs[1] + fxOutputs[2] + fxOutputs[3]);
         // // x = flanger.flange(flangeInput, params[ofs+4] * 6000 + 100, params[ofs+5] * 0.98, params[ofs+6] * 0.95f, params[ofs+7]);
         return x;
     }
@@ -170,7 +176,7 @@ public:
         for(size_t i=0; i < params.size(); i++) {
             unsmoothParams[i] = newparams[i];
         }
-        filt.set(maxiBiquad::filterTypes::HIGHPASS, unsmoothParams[17] * 5000.f, 2, 1);
+        // filt.set(maxiBiquad::filterTypes::HIGHPASS, unsmoothParams[17] * 5000.f, 2, 1);
 
 
         // PERIODIC_DEBUG(6000,
@@ -194,8 +200,9 @@ public:
 
 private:
     maxiNonlinearity distortion;
-    maxiDelayline<15000> dl;
-    maxiFlanger<15000> flanger;
+    maxiDelayline<4000> dl;
+    maxiDelayline<4000> dl2;
+    maxiFlanger<2000> flanger;
     maxiOsc sinosc;
     maxiBiquad filt;
 

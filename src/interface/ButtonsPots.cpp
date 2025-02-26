@@ -74,12 +74,12 @@ void ButtonsPots::Process(void)
             _sat(pot_state_[1] * kPotScaling),
             _sat(pot_state_[2] * kPotScaling),
         };
-        Serial.print("X:");
-        Serial.print(joystick_read.potX);
-        Serial.print(",Y:");
-        Serial.print(joystick_read.potY);
-        Serial.print(",Rotate:");
-        Serial.println(joystick_read.potRotate);
+        //Serial.print("X:");
+        //Serial.print(joystick_read.potX);
+        //Serial.print(",Y:");
+        //Serial.print(joystick_read.potY);
+        //Serial.print(",Rotate:");
+        //Serial.println(joystick_read.potRotate);
         // Pot action
         gTriggerParamUpdate = true;
     }
