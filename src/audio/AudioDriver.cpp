@@ -9,11 +9,6 @@
 #include "hardware/dma.h"
 #include "hardware/clocks.h"
 
-
-#define TEST_TONES    0
-#define PASSTHROUGH   0
-
-
 const int AUDIO_MEM sampleRate = kSampleRate; // minimum for many i2s DACs
 const int AUDIO_MEM bitsPerSample = 32;
 
@@ -25,16 +20,10 @@ int32_t sample = amplitude; // current sample value
 
 AudioControlSGTL5000 codecCtl;
 
-audiocallback_fptr_t audio_callback_;
+static std::shared_ptr<AudioAppBase> AUDIO_MEM audio_app_ptr_ = nullptr;
+
 
 static __attribute__((aligned(8))) pio_i2s i2s;
-
-
-#if TEST_TONES
-maxiOsc osc, osc2;
-
-float f1=20, f2=2000;
-#endif  // TEST_TONES
 
 inline float AUDIO_FUNC(_scale_and_saturate)(float x) {
     x *= amplitude;
@@ -54,48 +43,29 @@ inline float AUDIO_FUNC(_scale_down)(float x) {
 static void AUDIO_FUNC(process_audio)(const int32_t* input, int32_t* output, size_t num_frames) {
     // Timing start
     auto ts = micros();
+    const float *input_as_float = reinterpret_cast<float*>(input);
+    const float *output_as_float = reinterpret_cast<float*>(output);
 
+    // Convert to float
     for (size_t i = 0; i < num_frames; i++) {
-    
-    stereosample_t y { 
-        _scale_down(static_cast<float>(input[i*2])),
-        _scale_down(static_cast<float>(input[i*2 + 1]))
-    };
+        input_as_float[input[i*2]] = _scale_down(static_cast<float>(input[i*2]));
+        input_as_float[input[i*2+1]] = _scale_down(static_cast<float>(input[i*2+1]));
+    }
 
-#if !(TEST_TONES)
-
-#if !(PASSTHROUGH)
-        y = audio_callback_(y);
-
-        stereosample_t y_scaled {
-            _scale_and_saturate(y.L),
-            _scale_and_saturate(y.R),
-        };
-        output[i*2] = static_cast<int32_t>(y_scaled.L);
-        output[(i*2) + 1] = static_cast<int32_t>(y_scaled.R);
-#else
-
-        // output[i] = input[i];
-
-        output[i*2] = input[i*2];
-         output[(i*2) + 1] = input[(i*2) + 1];
-#endif  // PASSTHROUGH
-
-#else
-
-        output[i*2] = osc.sinewave(f1) * sample;
-        output[(i*2) + 1] = osc2.sinewave(f2) * sample;
-        // count++;
-        f1 *= 1.00001;
-        f2 *= 1.00001;
-        if (f1 > 15000) {
-          f1 = 20.0;
+    if (audio_app_ptr_) {
+        // Run audio app
+        audio_app_ptr_->Process(input_as_float, output_as_float, num_frames);
+    } else {
+        // Clean passthrough
+        for (size_t n = 0; n < num_frames * kNChannels; n++) {
+            output_as_float[n] = input_as_float[n];
         }
-        if (f2 > 15000) {
-          f2 = 20.0;
-        }
-#endif  // TEST_TONES
+    }
 
+    // Convert back to int
+    for (size_t i = 0; i < num_frames; i++) {
+        output[i*2] = static_cast<int32_t>(_scale_and_saturate(output_as_float[i*2]));
+        output[i*2+1] = static_cast<int32_t>(_scale_and_saturate(output_as_float[i*2+1]));
     }
     // Timing end
     auto elapsed = micros() - ts;
@@ -103,7 +73,7 @@ static void AUDIO_FUNC(process_audio)(const int32_t* input, int32_t* output, siz
             ((static_cast<float>(kBufferSize)/static_cast<float>(kSampleRate))
             * 1000000.f);
     float dspload = elapsed * quantumLength;
-    // Serial.println(dspload);
+
     // Report DSP overload if needed
     static volatile bool dsp_overload = false;
     if (dspload > 0.95 and !dsp_overload) {
@@ -128,40 +98,9 @@ static void __isr dma_i2s_in_handler(void) {
     dma_hw->ints0 = 1u << i2s.dma_ch_in_data;  // clear the IRQ
 }
 
+bool AudioDriver::Setup() {
 
-void __isr AudioDriver_Output::i2sOutputCallback() {
-
-
-    // for(size_t i=0;  i < kBufferSize; i++) {
-
-    //     stereosample_t y { 0 };
-    //     y = audio_callback_(y);
-
-    //     stereosample_t y_scaled {
-    //         _scale_and_saturate(y.L),
-    //         _scale_and_saturate(y.R),
-    //     };
-    //     i2s.write32(static_cast<int32_t>(y_scaled.L), static_cast<int32_t>(y_scaled.R));
-    // }
-
-    // Timing end
-    // auto elapsed = micros() - ts;
-    // static constexpr float quantumLength = 1.f/
-    //         ((static_cast<float>(kBufferSize)/static_cast<float>(kSampleRate))
-    //         * 1000000.f);
-    // float dspload = elapsed * quantumLength;
-    // // Report DSP overload if needed
-    // static volatile bool dsp_overload = false;
-    // if (dspload > 0.95 and !dsp_overload) {
-    //     dsp_overload = true;
-    // } else if (dspload < 0.9) {
-    //     dsp_overload = false;
-    // }
-}
-
-bool AudioDriver_Output::Setup() {
-
-    audio_callback_ = &silence_;
+    audio_app_ptr_ = nullptr;
 
     maxiSettings::setup(kSampleRate, 2, kBufferSize);
 
@@ -196,10 +135,8 @@ bool AudioDriver_Output::Setup() {
     return true;
 }
 
-
-stereosample_t AudioDriver_Output::silence_(stereosample_t x) {
-    x.L = 0;
-    x.R = 0;
-
-    return x;
+void AudioDriver::SetAudioApp(std::shared_ptr<AudioAppBase> audio_app_ptr)
+{
+    audio_app_ptr_ = audio_app_ptr;
 }
+

@@ -2,40 +2,26 @@
 #define __AUDIO_DRIVER_HPP__
 
 #include <cstddef>
+#include <memory>
 #include <Arduino.h>
+#include "AudioAppBase.hpp"
 
-extern "C" {
 
 const size_t kBufferSize = 64;
-constexpr size_t kSampleRate = 48000;
+const size_t kSampleRate = 48000;
+const size_t kNChannels = AudioAppBase::kNChannels;
 constexpr float kSampleRateRcpr = 1.0/kSampleRate;
 
-typedef struct {
-    float L;
-    float R;
-} stereosample_t;
 
-using audiocallback_fptr_t = stereosample_t (*)(stereosample_t);
-
-}
-
-extern audiocallback_fptr_t audio_callback_;
-
-class AudioDriver_Output {
+class AudioDriver {
 
  public:
 
     static bool Setup();
-    static inline void SetCallback(audiocallback_fptr_t callback) {
-        audio_callback_ = callback;
-        Serial.print("AUDIO_DRIVER - Callback address: ");
-        Serial.printf("%p\n", audio_callback_);
-    }
+    static void SetAudioApp(std::shared_ptr<AudioAppBase> audio_app_ptr);
 
-    AudioDriver_Output() = delete;
-
-    static void i2sOutputCallback(void);
-    static stereosample_t silence_(stereosample_t);
+ private:
+    AudioDriver() = delete;
 };
 
 

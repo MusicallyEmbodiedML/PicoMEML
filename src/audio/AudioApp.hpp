@@ -7,6 +7,7 @@
 
 #include <vector>
 
+#if 0
 const size_t kAudioApp_NAnalysisParams = 1;
 
 /**
@@ -28,5 +29,6 @@ stereosample_t AUDIO_FUNC(AudioAppProcess)(stereosample_t);
  * @param params Vector of params (of length kN_synthparams)
  */
 void AudioAppSetParams(std::vector<float> &params);
+#endif
 
 #endif  // __AUDIO_APP_HPP__

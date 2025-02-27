@@ -1,35 +1,22 @@
-#include <MIDI.h>
-
 #include "src/PicoDefs.hpp"
 #include "src/audio/AudioDriver.hpp"
-#include "src/audio/AudioApp.hpp"
 #include "src/interface/ButtonsPots.hpp"
 #include "src/common/common_defs.h"
-#if FM_SYNTH
-#include "src/synth/FMSynth.hpp"
-#elif FX_PROCESSOR
-#include "src/synth/matrixMix.hpp"
-#elif EUCLIDEAN
-#include "src/synth/EuclideanSeq.hpp"
-#endif  
-
 #include "src/interface/MEMLInterface.hpp"
 #include "src/interface/mlp_task.hpp"
+#include "src/audio/AnalysisParams.hpp"
+#include "src/interface/PIOUART.hpp"
+
+#include "src/audio/app/Passthrough.hpp"
 
 #include <cstdint>
 #include <vector>
 #include <memory>
 
-
 #include "pico/util/queue.h"
-#include "src/audio/AnalysisParams.hpp"
-#include "src/interface/PIOUART.hpp"
-
-//for random bits
 #include "hardware/clocks.h"
 #include "hardware/structs/rosc.h"
 
-// #include "src/interface/MIDI.hpp"
 
 // Core 0->1 comms
 const size_t kSharedMemSize = 1;
@@ -43,8 +30,6 @@ static volatile bool flag_init_1 = false;
 
 const bool waitForSerialOnStart = false;
 
-// std::shared_ptr<MIDIDevice> devmidi;
-
 // Global app state
 ts_app_state gAppState = {
     .n_iterations = 500,
@@ -57,21 +42,16 @@ ts_app_state gAppState = {
     .current_expl_mode = expl_mode_pretrain
 };
 bool gTriggerParamUpdate = false;
+std::shared_ptr<AudioAppBase> gAudioApp;
 
 // Global objects
 MEMLInterface meml_interface(
     &queue_audioparam,
     &queue_interface_pulse,
     &queue_interface_midi,
-#if FM_SYNTH
-    &FMSynth::GenParams,
-#elif FX_PROCESSOR
-    &MaxtrixMixApp::GenParams,
-#elif EUCLIDEAN
-    &EuclideanSeqApp::GenParams,
-#endif  // FM_SYNTH
+    nullptr,
     kNInputParams,
-    kN_synthparams
+    14  // FIXME this should be linked to audio app!
 );
 
 uint32_t pico_get_random_bits(int num_bits) {
@@ -100,16 +80,19 @@ void setup() {
     // Seed the standard PRNG
     srand(seed);
 
+    // Audio app init
+    gAudioApp = std::make_unique<Passthrough>();
+    gAudioApp->Setup(kSampleRate);
+
     // Set up the mutex;
-    AnalysisParamsSetup(kAudioApp_NAnalysisParams);
+    AnalysisParamsSetup(gAudioApp->GetAudioParamsSize());
 
     // AUDIO routine setup
-    if (!AudioDriver_Output::Setup()) {
+    if (!AudioDriver::Setup()) {
         Serial.println("setup - I2S init failed!");
     }
-    AudioAppSetup();
     // I2S callback is last
-    AudioDriver_Output::SetCallback(&AudioAppProcess);
+    AudioDriver::SetAudioApp(gAudioApp);
     // Wait for init sync
     Serial.println("Audio running");
     flag_init_0 = true;
@@ -126,10 +109,10 @@ void AUDIO_FUNC(loop)() {
         // Audio parameter queue receiver:
         // From interface/mlp_task.cpp and interface/MEMLInterface.cpp
         // on core 1
-        std::vector<float> audio_params(kN_synthparams);
+        std::vector<float> audio_params(gAudioApp->GetAudioParamsSize());
         if (queue_try_remove(&queue_audioparam, audio_params.data())) {
             //Serial.println(".");
-            AudioAppSetParams(audio_params);
+            gAudioApp->UpdateControlParams(audio_params.data());
         }
     }
 

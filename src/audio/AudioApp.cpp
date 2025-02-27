@@ -12,7 +12,7 @@
 #include <cmath>
 #include "AnalysisParams.hpp"
 
-
+#if 0
 #if FM_SYNTH
 static AUDIO_MEM FMSynth fm_synth_(kSampleRate);
 #elif FX_PROCESSOR
@@ -64,3 +64,5 @@ void AudioAppSetParams(std::vector<float> &params)
     euclideanApp.mapParameters(params);    
 #endif
 }
+
+#endif
