@@ -19,19 +19,19 @@ static bool button_isr_ = false;
 
 void ButtonsPots::Setup(bool button_isr)
 {
-    button_isr_ = button_isr;
-    // Set GPIO buttons as read
-    for (auto &gpio_idx : Buttons) {
-        pinMode(gpio_idx, INPUT_PULLUP);
-        // Set up ISR
-        if (button_isr) {
-            attachInterrupt(digitalPinToInterrupt(gpio_idx), ButtonISR, CHANGE);
-        }
-    }
-    // Set analogue as ADC
-    for (auto &gpio_idx : Pots) {
-        pinMode(gpio_idx, INPUT);
-    }
+    // button_isr_ = button_isr;
+    // // Set GPIO buttons as read
+    // for (auto &gpio_idx : Buttons) {
+    //     pinMode(gpio_idx, INPUT_PULLUP);
+    //     // Set up ISR
+    //     if (button_isr) {
+    //         attachInterrupt(digitalPinToInterrupt(gpio_idx), ButtonISR, CHANGE);
+    //     }
+    // }
+    // // Set analogue as ADC
+    // for (auto &gpio_idx : Pots) {
+    //     pinMode(gpio_idx, INPUT);
+    // }
 
     // Reset states
     for (unsigned int n = 0; n < kNButtons; n++) {

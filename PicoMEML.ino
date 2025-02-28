@@ -1,5 +1,11 @@
 #include <MIDI.h>
 
+
+#include <SPI.h>
+#include <TFT_eSPI.h>      // Hardware-specific library
+
+
+
 #include "src/PicoDefs.hpp"
 #include "src/audio/AudioDriver.hpp"
 #include "src/audio/AudioApp.hpp"
@@ -28,6 +34,9 @@
 //for random bits
 #include "hardware/clocks.h"
 #include "hardware/structs/rosc.h"
+
+TFT_eSPI tft = TFT_eSPI(); // Invoke custom library
+
 
 // #include "src/interface/MIDI.hpp"
 
@@ -100,6 +109,8 @@ void setup() {
     // Seed the standard PRNG
     srand(seed);
 
+
+
     // Set up the mutex;
     AnalysisParamsSetup(kAudioApp_NAnalysisParams);
 
@@ -109,18 +120,50 @@ void setup() {
     }
     AudioAppSetup();
     // I2S callback is last
+
+    tft.init();
+
+    // Set the rotation to the orientation you wish to use in your project before calibration
+    // (the touch coordinates returned then correspond to that rotation only)
+    tft.setRotation(1);
+
+    // Calibrate the touch screen and retrieve the scaling factors
+      // Clear the screen
+    tft.fillScreen(TFT_BLACK);
+    tft.drawCentreString("Touch screen to test!",tft.width()/2, tft.height()/2, 2);
+
     AudioDriver_Output::SetCallback(&AudioAppProcess);
     // Wait for init sync
     Serial.println("Audio running");
     flag_init_0 = true;
 
-
     while (!flag_init_1) {
         // Wait for other core
     };
 }
+int x=0;
 
 void AUDIO_FUNC(loop)() {
+  uint16_t x = 0, y = 0; // To store the touch coordinates
+
+  // Pressed will be set true is there is a valid touch on the screen
+  bool pressed = tft.getTouch(&x, &y);
+
+  // Draw a white spot at the detected coordinates
+  if (pressed) {
+    tft.fillCircle(x, y, 2, TFT_WHITE);
+    //Serial.print("x,y = ");
+    //Serial.print(x);
+    //Serial.print(",");
+    //Serial.println(y);
+  }
+  // x++;
+  // Serial.println(x);
+  // if (x == 2000) {
+  //   x=0;
+    tft.fillScreen(TFT_BLACK);
+
+  // }
 
     {
         // Audio parameter queue receiver:
