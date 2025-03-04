@@ -41,6 +41,8 @@
 #include <Accelerate/Accelerate.h>
 #endif
 
+extern float fastsin(float v);
+extern float fastcos(float v);
 
 
 class fft {
@@ -52,6 +54,7 @@ public:
     void setup(int fftSize);
 	int n; //fftSize
 	int half; //halfFFTSize
+    float theta;
 
     std::vector<float> in_real,out_real,in_img,out_img;
 
@@ -82,6 +85,9 @@ public:
 #endif
 	
 	/* Calculate the power spectrum */
+    void FFT(int NumSamples,
+        bool InverseTransform,
+        float *RealIn, float *ImagIn, float *RealOut, float *ImagOut);
     void calcFFT(int start, float *data, float *window);
     void cartToPol(float *magnitude,float *phase);
 	void powerSpectrum(int start, float *data, float *window, float *magnitude, float *phase);

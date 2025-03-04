@@ -7,6 +7,7 @@
 #include "maximilian.h"
 #include "maxiFFT.h"
 #include "OnePoleSmoother.hpp"
+#include "../common/sinetable.h"
 
 
 #define PERIODIC_DEBUG(COUNT, FUNC) \
@@ -114,6 +115,8 @@ public:
         mags2.resize(256);
         phases.resize(256);
         phases2.resize(256);
+
+
                 
     }
 
@@ -134,9 +137,24 @@ public:
         // )
         size_t tsfft, tsifft;
         auto ts = micros();
+
+        	//testing on fastsincos
+        // PERIODIC_DEBUG(3000,
+        // for (int i = 0; i < 2; i++) {
+        //     float v = (rand() / (float)RAND_MAX * 20.f) - 10.f;
+        //     float s = sineTable::fast_sin(v);
+        //     float c = sineTable::fast_cos(v);
+        //     // float s=0;
+        //     // float c=0;
+        //     float s2 = sinf(v);
+        //     float c2 = cosf(v);
+        //     Serial.printf("v: %f, s: %f=%f, c: %f=%f\n", v, s, s2, c, c2);
+        // }
+        // )
+
         if (fft.process(x)) {
-            Serial.println(fft.getMagnitudes()[3]);
             tsfft=micros() - ts;
+            Serial.println(fft.getMagnitudes()[3]);
 
             mags = fft.getMagnitudes();
             phases = fft.getMagnitudes();
