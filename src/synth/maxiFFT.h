@@ -36,7 +36,7 @@
 //#define _NO_VDSP  //set this if you don't want to use apple's vDSP fft functions
 
 
-#include "fft.h"
+#include "qd_fft.h"
 #include "stddef.h"
 #include <vector>
 
@@ -101,7 +101,7 @@ public:
 	int pos;
 	float nextValue;
 	int fftSize;
-	fft _fft;
+	qd_fft _fft;
 	bool newFFT;
   int windowSize;
   int hopSize;
@@ -154,7 +154,7 @@ private:
 	int pos;
 	float nextValue;
 	int fftSize;
-	fft _fft;
+	qd_fft _fft;
 };
 
 

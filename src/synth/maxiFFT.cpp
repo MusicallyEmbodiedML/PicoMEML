@@ -44,7 +44,7 @@ using namespace std;
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 void maxiFFT::setup(int _fftSize, int _hopSize, int _windowSize) {
-	_fft.setup(_fftSize);
+	_fft.setup(_fftSize, false);
 	fftSize = _fftSize;
 	windowSize = _windowSize > fftSize ? _windowSize : fftSize;
 	bins = fftSize / 2;
@@ -56,7 +56,7 @@ void maxiFFT::setup(int _fftSize, int _hopSize, int _windowSize) {
 	pos =windowSize - hopSize;
 	newFFT = 0;
 	window.resize(fftSize,0);
-	fft::genWindow(3, windowSize, &window[0]);
+	qd_fft::genWindow(3, windowSize, &window[0]);
 	recalc = true;
 }
 
@@ -71,11 +71,14 @@ bool maxiFFT::process(float value, fftModes mode) {
 	// //if buffer full, run fft
   	pos++;
 	newFFT = pos == windowSize;
+
 	if (newFFT) {
         if (mode == maxiFFT::WITH_POLAR_CONVERSION) {
-            _fft.powerSpectrum(0, &buffer[0], &window[0], &magnitudes[0], &phases[0]);
+            // _fft.powerSpectrum(0, &buffer[0], &window[0], &magnitudes[0], &phases[0]);
+			_fft.PowerSpectrum_StartQD(0, &buffer[0], &window[0], &magnitudes[0], &phases[0]);
         }else{
-            _fft.calcFFT(0, &buffer[0], &window[0]);
+            _fft.windowing(0, &buffer[0], &window[0]);
+			_fft.calcFFT();
         }
 // 		//shift buffer back by one hop size
 		memcpy(&buffer[0], &buffer[0] + hopSize, (windowSize - hopSize) * sizeof(float));
@@ -83,7 +86,12 @@ bool maxiFFT::process(float value, fftModes mode) {
 		pos= windowSize - hopSize;
 //     	recalc = true;
 	}
-	return newFFT;
+	bool fftProcessed=false;
+	if (_fft.PowerSpectrum_QD_Interate()) {
+		fftProcessed = true;
+	}
+	
+	return fftProcessed;
 }
 
 // bool maxiFFT::process(float value, int mode){
@@ -135,7 +143,7 @@ float maxiFFT::spectralCentroid() {
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 void maxiIFFT::setup(int _fftSize, int _hopSize, int _windowSize) {
-	_fft.setup(_fftSize);
+	_fft.setup(_fftSize, true);
 	fftSize = _fftSize;
   windowSize = _windowSize ? _windowSize : fftSize;
 	bins = fftSize / 2;
@@ -144,7 +152,7 @@ void maxiIFFT::setup(int _fftSize, int _hopSize, int _windowSize) {
   ifftOut.resize(fftSize,0);
 	pos =0;
   window.resize(fftSize,0);
-	fft::genWindow(3, windowSize, &window[0]);
+	qd_fft::genWindow(3, windowSize, &window[0]);
 }
 
 float maxiIFFT::process(vector<float> &mags, vector<float> &phases, fftModes mode) {

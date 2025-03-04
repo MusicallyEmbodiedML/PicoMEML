@@ -158,7 +158,6 @@ public:
 
             mags = fft.getMagnitudes();
             phases = fft.getMagnitudes();
-            Serial.printf("fft: %u\n", tsfft);
         }
         // ts = micros();
         // x = ifft.process(mags, phases);

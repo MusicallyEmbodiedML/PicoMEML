@@ -8,6 +8,7 @@
 #include "../synth/maximilian.h"
 #include "hardware/dma.h"
 #include "hardware/clocks.h"
+#include "hardware/vreg.h"
 
 
 #define TEST_TONES    0
@@ -170,7 +171,8 @@ bool AudioDriver_Output::Setup() {
         Serial.println("AUDIO- Failed to setup I2C with codec!");
     }
 
-    set_sys_clock_khz(132000*2, true);
+    vreg_set_voltage(VREG_VOLTAGE_1_25);
+    set_sys_clock_khz(132000*2.25, true);
     // set_sys_clock_khz(129600, true);
     Serial.printf("System Clock: %lu\n", clock_get_hz(clk_sys));
 
