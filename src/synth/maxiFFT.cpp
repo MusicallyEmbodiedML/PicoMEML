@@ -77,8 +77,9 @@ bool maxiFFT::process(float value, fftModes mode) {
             // _fft.powerSpectrum(0, &buffer[0], &window[0], &magnitudes[0], &phases[0]);
 			_fft.PowerSpectrum_StartQD(0, &buffer[0], &window[0], &magnitudes[0], &phases[0]);
         }else{
-            _fft.windowing(0, &buffer[0], &window[0]);
-			_fft.calcFFT();
+			//need to convert to QD job (subset of power spectrum qd job)
+            // _fft.windowing(0, &buffer[0], &window[0]);
+			// _fft.calcFFT();
         }
 // 		//shift buffer back by one hop size
 		memcpy(&buffer[0], &buffer[0] + hopSize, (windowSize - hopSize) * sizeof(float));
@@ -89,6 +90,7 @@ bool maxiFFT::process(float value, fftModes mode) {
 	bool fftProcessed=false;
 	if (_fft.PowerSpectrum_QD_Interate()) {
 		fftProcessed = true;
+		firstBlockProcessed = true;
 	}
 	
 	return fftProcessed;
@@ -146,43 +148,48 @@ void maxiIFFT::setup(int _fftSize, int _hopSize, int _windowSize) {
 	_fft.setup(_fftSize, true);
 	fftSize = _fftSize;
   windowSize = _windowSize ? _windowSize : fftSize;
-	bins = fftSize / 2;
-	hopSize = _hopSize;
+  bins = fftSize / 2;
+  hopSize = _hopSize;
   buffer.resize(fftSize,0);
   ifftOut.resize(fftSize,0);
 	pos =0;
   window.resize(fftSize,0);
-	qd_fft::genWindow(3, windowSize, &window[0]);
+  qd_fft::genWindow(3, windowSize, &window[0]);
 }
 
-float maxiIFFT::process(vector<float> &mags, vector<float> &phases, fftModes mode) {
+float maxiIFFT::process(vector<float> &mags, vector<float> &phases, bool trigCalc, fftModes mode) {
 	newcalc = false;
-	if (0==pos) {
-		newcalc=true;
+	if (trigCalc) {
+		// newcalc=true;
 		//do ifft
         std::fill(ifftOut.begin(), ifftOut.end(), 0);
         if (mode == maxiIFFT::SPECTRUM) {
-            _fft.inversePowerSpectrum(0, &ifftOut[0], &window[0], mags.data(), phases.data());
+            _fft.InvPowerSpectrum_StartQD(0, &ifftOut[0], &window[0], mags.data(), phases.data());
         }else{
-            _fft.inverseFFTComplex(0, &ifftOut[0], &window[0], mags.data(), phases.data());
+            // _fft.inverseFFTComplex(0, &ifftOut[0], &window[0], mags.data(), phases.data());
         }
+	}
+	if (_fft.InvPowerSpectrum_QD_Interate()) {
+		newcalc = true;
+		startPlayback = true;
 		//add to output
 		//shift back by one hop
 		memcpy(&buffer[0], &buffer[0]+hopSize, (fftSize - hopSize) * sizeof(float));
 		//clear the end chunk
     	memset(&buffer[0] + (fftSize - hopSize), 0, hopSize * sizeof(float));
 		//merge new output
-		for(int i=0; i < fftSize; i++) {
+		for(size_t i=0; i < fftSize; i++) {
 			buffer[i] += ifftOut[i];
 		}
 	}
-
-	nextValue = buffer[pos];
-	//limit the values, this alg seems to spike occasionally (and break the audio drivers)
-  // if (nextValue > 0.99999f) nextValue = 0.99999f;
-  // if (nextValue < -0.99999f) nextValue = -0.99999f;
-	if (hopSize == ++pos ) {
-		pos=0;
+	
+	if (startPlayback) {
+		nextValue = buffer[pos];
+		if (hopSize == ++pos ) {
+			pos=0;
+		}
+	}else{
+		nextValue = 0;
 	}
 
 	return nextValue;

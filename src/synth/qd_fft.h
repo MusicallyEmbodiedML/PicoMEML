@@ -41,11 +41,28 @@
 
 class fft_core {
 public:
+
+    struct FFTStates {
+        float ar0, ar1, ar2, ai0, ai1, ai2;
+        size_t block=0, idx=0, j=0, n=0;
+        size_t iterationCount=0;
+        size_t maxIterationsPerQuanta=64;
+    } st;
+
+    void initFFT_QD_State(size_t maxItPerQ) {
+        st.block =0;
+        st.idx=0;
+        st.j=0;
+        st.n=0;
+        st.maxIterationsPerQuanta = maxItPerQ;
+    }
+
     void setup(size_t nSamples, bool inverse);
     void FFTDataSetup(float *RealIn, float *ImagIn, float *RealOut, float *ImagOut);
     void FFT(float *RealIn, float *ImagIn, float *RealOut, float *ImagOut);
+    void FFT_QD(float *RealIn, float *ImagIn, float *RealOut, float *ImagOut, const size_t i, const size_t start, const size_t end);
+    bool FFT_QD_B(float *RealIn, float *ImagIn, float *RealOut, float *ImagOut);
     void FFTNormalise(float *RealOut, float *ImagOut);
-    void FFT_QD(float *RealIn, float *ImagIn, float *RealOut, float *ImagOut, size_t i);
 
     int NumberOfBitsNeeded(int PowerOfTwo);
     int FastReverseBits(int i, int NumBits);
@@ -62,7 +79,7 @@ private:
 	float angle_numerator;
     std::vector<size_t> FastReverseBitsCache, BlockSizeCache;
     std::vector<float> deltaAngleCache, cm1Cache, cm2Cache, sm1Cache, sm2Cache;
-    float denominv;;
+    float denominv;
 
 };
 
@@ -99,11 +116,13 @@ public:
     void cartToPol(float *magnitude, float *phase, const size_t start, const size_t end);
 	void powerSpectrum(int start, float *data, float *window, float *magnitude, float *phase);
 	/* ... the inverse */
-    void polToCart(float *const magnitude,float *const phase);
+    void polToCart(float *const magnitude,float *const phase, const size_t start, const size_t end);
+    void zeroNegFreqs();
     void calcIFFT(int start, float *finalOut, float *window);
     void inverseFFTComplex(int start, float *finalOut, float *window, float *real, float *imaginary);
 	void inversePowerSpectrum(int start, float *finalOut, float *window, float *magnitude,float *phase);
 	void convToDB(float *in, float *out);
+    void iFFTWindowing(int start, float *finalOut, float *window);
     
 	static void genWindow(int whichFunction, int NumSamples, float *window);
     void RealFFTSetup(float *rfft_RealIn, float *rfft_RealOut, float *rfft_ImagOut);
@@ -124,7 +143,6 @@ public:
         size_t cartToPolDiv=32;
         size_t nCartToPol;
         size_t subPhase=0;
-
         size_t nFFTSteps;
 
     };
@@ -132,6 +150,30 @@ public:
 
     void PowerSpectrum_StartQD(int start, float *data, float *window, float *magnitude, float *phase);
     bool PowerSpectrum_QD_Interate();
+
+
+    struct InvPowerSpectrumJob {
+        enum QD_PHASES : uint8_t {INIT=0, POL2CART, NEGFREQS, INVFFTSETUP, CALCINVFFT, IFFTNORMALISE, IFFTWINDOWING, DONE} qdPhase;
+        int start;
+        float * sigout;
+        float * window;
+        std::vector<float> magnitude;
+        std::vector<float> phase;
+        std::vector<size_t> timings;
+
+        size_t Pol2CartDiv=32;
+        size_t nPolToCart;
+        size_t subPhase=0;
+
+        size_t nFFTSteps;
+        size_t nFFTSubSteps;
+        size_t nFFTSubStepDiv = 256;
+
+    };
+	InvPowerSpectrumJob invjob;
+
+    void InvPowerSpectrum_StartQD(int start, float *sigout, float *window, float *magnitude, float *phase);
+    bool InvPowerSpectrum_QD_Interate();
 
 private:
     void WindowFunc(int whichFunction, int NumSamples, float *in);

@@ -135,8 +135,10 @@ void fft_core::setup(size_t n, bool inverse) {
 	InitQDFFT();
 	NumBits = NumberOfBitsNeeded(NumSamples);
 	angle_numerator = 2.0f * M_PI;
+	
 	if (InverseTransform)
 		angle_numerator = -angle_numerator;
+
 	FastReverseBitsCache.resize(NumSamples);
 	for (size_t i = 0; i < NumSamples; i++) {
 		FastReverseBitsCache[i] = FastReverseBits(i, NumBits);
@@ -155,7 +157,7 @@ void fft_core::setup(size_t n, bool inverse) {
 		cm2Cache.push_back(cosf(-2.f * delta_angle));
 		cm1Cache.push_back(cosf(-delta_angle));
 	}	
-	float denominv = 1.f/ NumSamples;
+	denominv = 1.f / NumSamples;
 }
 
 void __not_in_flash_func(fft_core::FFTDataSetup)(float *RealIn, float *ImagIn, float *RealOut, float *ImagOut) {
@@ -226,28 +228,31 @@ void __not_in_flash_func(fft_core::FFT)(float *RealIn, float *ImagIn, float *Rea
 	
 }
 
-void __not_in_flash_func(fft_core::FFT_QD)(float *RealIn, float *ImagIn, float *RealOut, float *ImagOut, size_t i)
-{
-	size_t BlockEnd = i==0 ? 1 : BlockSizeCache[i-1];
-	size_t BlockSize = BlockSizeCache[i];
-	const float delta_angle = deltaAngleCache[i];// angle_numerator / (float) BlockSize;
-	
-	const float sm2 = sm2Cache[i]; // sineTable::fast_sin(-2.f * delta_angle);
-	const float sm1 = sm1Cache[i]; //sineTable::fast_sin(-delta_angle);
-	const float cm2 = cm2Cache[i]; //sineTable::fast_cos(-2.f * delta_angle);
-	const float cm1 = cm1Cache[i]; //sineTable::fast_cos(-delta_angle);
 
-	const float w = 2 * cm1;
-	float ar0, ar1, ar2, ai0, ai1, ai2;
+void __not_in_flash_func(fft_core::FFT_QD)(float *RealIn, float *ImagIn, float *RealOut, float *ImagOut, 
+	const size_t block, const size_t start, const size_t end)
+{
+	const size_t BlockEnd = block==0 ? 1 : BlockSizeCache[block-1];
+	const size_t BlockSize = BlockSizeCache[block];
+	const float delta_angle = deltaAngleCache[block];// angle_numerator / (float) BlockSize;
 	
-	for (size_t i = 0; i < NumSamples; i += BlockSize) {
+	const float sm2 = sm2Cache[block]; // sineTable::fast_sin(-2.f * delta_angle);
+	const float sm1 = sm1Cache[block]; //sineTable::fast_sin(-delta_angle);
+	const float cm2 = cm2Cache[block]; //sineTable::fast_cos(-2.f * delta_angle);
+	const float cm1 = cm1Cache[block]; //sineTable::fast_cos(-delta_angle);
+
+	const float w = 2.f * cm1;
+
+	
+	for (size_t idx = start; idx < end; idx += BlockSize) {
+		float ar0, ar1, ar2, ai0, ai1, ai2;
 		ar2 = cm2;
 		ar1 = cm1;
 		
 		ai2 = sm2;
 		ai1 = sm1;
 		size_t n;
-		for (size_t j = i, n = 0; n < BlockEnd; j++, n++) {
+		for (size_t j = idx, n = 0; n < BlockEnd; j++, n++) {
 			ar0 = w * ar1 - ar2;
 			ar2 = ar1;
 			ar1 = ar0;
@@ -256,9 +261,9 @@ void __not_in_flash_func(fft_core::FFT_QD)(float *RealIn, float *ImagIn, float *
 			ai2 = ai1;
 			ai1 = ai0;
 			
-			size_t k = j + BlockEnd;
-			float tr = ar0 * RealOut[k] - ai0 * ImagOut[k];
-			float ti = ar0 * ImagOut[k] + ai0 * RealOut[k];
+			const size_t k = j + BlockEnd;
+			const float tr = ar0 * RealOut[k] - ai0 * ImagOut[k];
+			const float ti = ar0 * ImagOut[k] + ai0 * RealOut[k];
 			
 		
 			RealOut[k] = RealOut[j] - tr;
@@ -268,11 +273,75 @@ void __not_in_flash_func(fft_core::FFT_QD)(float *RealIn, float *ImagIn, float *
 			ImagOut[j] += ti;
 		}
 	}		
+
 	
-	/*
-	 **   Need to normalize if inverse transform...
-	 */
-	
+}
+
+
+//alternate QD strategy
+bool __not_in_flash_func(fft_core::FFT_QD_B)(float *RealIn, float *ImagIn, float *RealOut, float *ImagOut)
+{
+	while(st.block < BlockSizeCache.size()) {
+
+		const size_t BlockEnd = st.block==0 ? 1 : BlockSizeCache[st.block-1];
+		const size_t BlockSize = BlockSizeCache[st.block];
+		const float delta_angle = deltaAngleCache[st.block];// angle_numerator / (float) BlockSize;
+		
+		const float sm2 = sm2Cache[st.block]; // sineTable::fast_sin(-2.f * delta_angle);
+		const float sm1 = sm1Cache[st.block]; //sineTable::fast_sin(-delta_angle);
+		const float cm2 = cm2Cache[st.block]; //sineTable::fast_cos(-2.f * delta_angle);
+		const float cm1 = cm1Cache[st.block]; //sineTable::fast_cos(-delta_angle);
+
+		const float w = 2.f * cm1;
+
+		while(st.idx < NumSamples) {
+		// for (size_t idx = 0; idx < NumSamples; idx += BlockSize) {
+			//on first iteration of the inner loop
+			if (st.n==0) {
+				st.ar2 = cm2;
+				st.ar1 = cm1;
+				
+				st.ai2 = sm2;
+				st.ai1 = sm1;
+				st.j=st.idx;
+			}
+			while (st.n < BlockEnd) {
+			// for (size_t j = idx, n = 0; n < BlockEnd; j++, n++) {
+				st.ar0 = w * st.ar1 - st.ar2;
+				st.ar2 = st.ar1;
+				st.ar1 = st.ar0;
+				
+				st.ai0 = w * st.ai1 - st.ai2;
+				st.ai2 = st.ai1;
+				st.ai1 = st.ai0;
+				
+				const size_t k = st.j + BlockEnd;
+				const float tr = st.ar0 * RealOut[k] - st.ai0 * ImagOut[k];
+				const float ti = st.ar0 * ImagOut[k] + st.ai0 * RealOut[k];
+				
+			
+				RealOut[k] = RealOut[st.j] - tr;
+				ImagOut[k] = ImagOut[st.j] - ti;
+				
+				RealOut[st.j] += tr;
+				ImagOut[st.j] += ti;
+				st.n++;
+				st.j++;
+
+				st.iterationCount++;
+				if (st.iterationCount == st.maxIterationsPerQuanta) {
+					st.iterationCount = 0;
+					//drop out and return later
+					return false;
+				}
+			}
+			st.idx += BlockSize;
+			st.n=0;
+		}	
+		st.idx=0;	
+		st.block++;
+	}
+	return true;
 }
 
 void __not_in_flash_func(fft_core::FFTNormalise)(float *RealOut, float *ImagOut) {
@@ -310,7 +379,7 @@ void __not_in_flash_func(qd_fft::RealFFTSetup)(float *rfft_RealIn, float *rfft_R
 
 void __not_in_flash_func(qd_fft::RealFFTCore)(float *rfft_RealIn, float *rfft_RealOut, float *rfft_ImagOut) {
 	for(size_t i=0; i < corefft.getNSteps(); i++) {
-		corefft.FFT_QD(&rfft_tmpReal[0], &rfft_tmpImag[0], rfft_RealOut, rfft_ImagOut, i);
+		corefft.FFT_QD(&rfft_tmpReal[0], &rfft_tmpImag[0], rfft_RealOut, rfft_ImagOut, i, 0, corefft.NumSamples);
 	}
 }
 
@@ -425,7 +494,7 @@ void __not_in_flash_func(qd_fft::RealFFT)(float *rfft_RealIn, float *rfft_RealOu
 // 	// delete[]ImagOut;
 // }
 
-void qd_fft::WindowFunc(int whichFunction, int NumSamples, float *in)
+void __not_in_flash_func(qd_fft::WindowFunc)(int whichFunction, int NumSamples, float *in)
 {
 	int i;
 	
@@ -451,7 +520,7 @@ void qd_fft::WindowFunc(int whichFunction, int NumSamples, float *in)
 	}
 }
 
-void qd_fft::genWindow(int whichFunction, int NumSamples, float *window)
+void __not_in_flash_func(qd_fft::genWindow)(int whichFunction, int NumSamples, float *window)
 {
 	int i;
 	
@@ -540,7 +609,7 @@ void qd_fft::calcFFT() {
 //     }
 // }
 
-void qd_fft::cartToPol(float *const magnitude, float *const phase, const size_t start, const size_t end) {
+void __not_in_flash_func(qd_fft::cartToPol)(float *const magnitude, float *const phase, const size_t start, const size_t end) {
     for (size_t i = start; i < end; i++) {
         /* compute power */
         const float power = out_real[i]*out_real[i] + out_img[i]*out_img[i];
@@ -570,29 +639,38 @@ void qd_fft::convToDB(float *in, float *out) {
 }
 
 
-void qd_fft::polToCart(float *magnitude,float *phase) {
+void __not_in_flash_func(qd_fft::polToCart)(float *magnitude,float *phase, const size_t start, const size_t end) {
     /* get real and imag part */
-    for (int i = 0; i < half; i++) {
+    for (size_t i = start; i < end; i++) {
         //		float mag = pow(10.0, magnitude[i] / 20.0) - 1.0;
         //		in_real[i] = mag *cos(phase[i]);
         //		in_img[i]  = mag *sin(phase[i]);
         in_real[i] = magnitude[i] *sineTable::fast_cos(phase[i]);
         in_img[i]  = magnitude[i] *sineTable::fast_sin(phase[i]);
+        // in_real[i] = magnitude[i] *cosf(phase[i]);
+        // in_img[i]  = magnitude[i] *sinf(phase[i]);
     }
-    
+}
+
+void __not_in_flash_func(qd_fft::zeroNegFreqs)() {
     /* zero negative frequencies */
     memset(&in_real[0]+half, 0.0, sizeof(float) * half);
     memset(&in_img[0]+half, 0.0, sizeof(float) * half);
+
 }
 
-void qd_fft::calcIFFT(int start, float *finalOut, float *window) {
-    corefft.FFTDataSetup(&in_real[0], &in_img[0], &out_real[0], &out_img[0]); // second parameter indicates inverse transform
-    corefft.FFT(&in_real[0], &in_img[0], &out_real[0], &out_img[0]); // second parameter indicates inverse transform
-    corefft.FFTNormalise(&out_real[0], &out_img[0]); // second parameter indicates inverse transform
 
+void __not_in_flash_func(qd_fft::iFFTWindowing)(int start, float *finalOut, float *window) {
     for (int i = 0; i < n; i++) {
         finalOut[start + i] += out_real[i] * window[i];
     }
+}
+
+void __not_in_flash_func(qd_fft::calcIFFT)(int start, float *finalOut, float *window) {
+    corefft.FFTDataSetup(&in_real[0], &in_img[0], &out_real[0], &out_img[0]); // second parameter indicates inverse transform
+    corefft.FFT(&in_real[0], &in_img[0], &out_real[0], &out_img[0]); // second parameter indicates inverse transform
+    corefft.FFTNormalise(&out_real[0], &out_img[0]); // second parameter indicates inverse transform
+	iFFTWindowing(start, finalOut, window);
 }
 
 void qd_fft::inverseFFTComplex(int start, float *finalOut, float *window, float *real, float *imaginary) {
@@ -604,10 +682,6 @@ void qd_fft::inverseFFTComplex(int start, float *finalOut, float *window, float 
 }
 
 
-void qd_fft::inversePowerSpectrum(int start, float *finalOut, float *window, float *magnitude,float *phase) {
-    polToCart(magnitude, phase);
-    calcIFFT(start, finalOut, window);
-}
 
 
 
@@ -627,32 +701,32 @@ void qd_fft::PowerSpectrum_StartQD(int start, float *data, float *window, float 
 	job.nFFTSteps = corefft.getNSteps();
 }
 
-bool qd_fft::PowerSpectrum_QD_Interate() {
+bool __not_in_flash_func(qd_fft::PowerSpectrum_QD_Interate)() {
 	bool done=false;
 	auto ts = micros();
 	switch(job.qdPhase) {
 		case PowerSpectrumJob::QD_PHASES::INIT:
 			job.qdPhase = PowerSpectrumJob::QD_PHASES::WINDOWING;
 			break;
-			case PowerSpectrumJob::QD_PHASES::WINDOWING:
+		case PowerSpectrumJob::QD_PHASES::WINDOWING:
 			windowing(job.start, job.data.data(), job.window.data());
 			job.qdPhase = PowerSpectrumJob::QD_PHASES::FFTSETUP;
 			break;
 		case PowerSpectrumJob::QD_PHASES::FFTSETUP:
 			RealFFTSetup(&in_real[0], &out_real[0], &out_img[0]);			
 			job.qdPhase = PowerSpectrumJob::QD_PHASES::CALCFFT;
-			job.subPhase=0;
+			corefft.initFFT_QD_State(32);
 			break;
 		case PowerSpectrumJob::QD_PHASES::CALCFFT:
-			// RealFFTCore(&in_real[0], &out_real[0], &out_img[0]);
-			corefft.FFT_QD(&rfft_tmpReal[0], &rfft_tmpImag[0], &out_real[0], &out_img[0], job.subPhase);
-			job.subPhase++;
-			if (job.subPhase >= job.nFFTSteps) {
+			if (corefft.FFT_QD_B(&rfft_tmpReal[0], &rfft_tmpImag[0], &out_real[0], &out_img[0])) {
 				job.qdPhase = PowerSpectrumJob::QD_PHASES::REALFFT;
-				job.subPhase=0;
 			}
-			// job.qdPhase = PowerSpectrumJob::QD_PHASES::REALFFT;
-			// job.subPhase=0;
+			// corefft.FFT_QD(&rfft_tmpReal[0], &rfft_tmpImag[0], &out_real[0], &out_img[0], job.subPhase, 0, corefft.NumSamples);
+			// job.subPhase++;
+			// if (job.subPhase >= job.nFFTSteps) {
+			// 	job.qdPhase = PowerSpectrumJob::QD_PHASES::REALFFT;
+			// 	job.subPhase=0;
+			// }
 			break;
 		case PowerSpectrumJob::QD_PHASES::REALFFT:
 			RealFFT(&in_real[0], &out_real[0], &out_img[0]);
@@ -671,17 +745,110 @@ bool qd_fft::PowerSpectrum_QD_Interate() {
 		case PowerSpectrumJob::QD_PHASES::DONE:
 			break;
 	}
-	job.timings.push_back(micros() - ts);
-	// job.idx++;
-	if (done) {
-		size_t total=0;
-		Serial.printf("ps ts: ");
-		for(auto &v: job.timings) {
-			Serial.printf("%u ", v);
-			total += v;
-		}
-		Serial.printf(":: total: %u\n", total);
-	}
+	// job.timings.push_back(micros() - ts);
+	// // job.idx++;
+	// if (done) {
+	// 	size_t total=0;
+	// 	Serial.printf("ps ts: ");
+	// 	for(auto &v: job.timings) {
+	// 		Serial.printf("%u ", v);
+	// 		total += v;
+	// 	}
+	// 	Serial.printf(":: total: %u\n", total);
+	// }
 	return done;
 }
 
+
+void qd_fft::inversePowerSpectrum(int start, float *finalOut, float *window, float *magnitude,float *phase) {
+    polToCart(magnitude, phase, 0, half);
+	zeroNegFreqs();
+    calcIFFT(start, finalOut, window);
+
+}
+
+void qd_fft::InvPowerSpectrum_StartQD(int start, float *sigout, float *window, float *magnitude, float *phase) {
+	invjob.start = start;
+	invjob.magnitude.resize(n);
+	invjob.phase.resize(n);
+	memcpy(&invjob.magnitude[0], magnitude, n * sizeof(float));
+	memcpy(&invjob.phase[0], phase, n * sizeof(float));
+	invjob.sigout = sigout;
+	invjob.window = window;
+	invjob.qdPhase = InvPowerSpectrumJob::QD_PHASES::INIT;
+	invjob.nPolToCart = half / invjob.Pol2CartDiv;
+	invjob.subPhase=0;
+	invjob.timings.clear();
+	invjob.nFFTSteps = corefft.getNSteps();
+	invjob.nFFTSubSteps = corefft.NumSamples / invjob.nFFTSubStepDiv;
+}
+
+bool __not_in_flash_func(qd_fft::InvPowerSpectrum_QD_Interate)() {
+	bool done=false;
+	auto ts = micros();
+	switch(invjob.qdPhase) {
+		case InvPowerSpectrumJob::QD_PHASES::INIT:
+			invjob.qdPhase = InvPowerSpectrumJob::QD_PHASES::POL2CART;
+			invjob.subPhase=0;
+			break;
+		case InvPowerSpectrumJob::QD_PHASES::POL2CART:
+			polToCart(invjob.magnitude.data(), invjob.phase.data(), invjob.subPhase * invjob.Pol2CartDiv, 
+				(invjob.subPhase+1) * invjob.Pol2CartDiv);
+			invjob.subPhase++;
+			if (invjob.subPhase >= invjob.nPolToCart) {
+				invjob.qdPhase = InvPowerSpectrumJob::QD_PHASES::NEGFREQS;
+			}			
+			break;
+		case InvPowerSpectrumJob::QD_PHASES::NEGFREQS:
+			zeroNegFreqs();
+			invjob.qdPhase = InvPowerSpectrumJob::QD_PHASES::INVFFTSETUP;
+			break;
+		case InvPowerSpectrumJob::QD_PHASES::INVFFTSETUP:
+			corefft.FFTDataSetup(&in_real[0], &in_img[0], &out_real[0], &out_img[0]);
+			invjob.qdPhase = InvPowerSpectrumJob::QD_PHASES::CALCINVFFT;
+			invjob.subPhase=0;
+			corefft.initFFT_QD_State(48);
+			break;
+		case InvPowerSpectrumJob::QD_PHASES::CALCINVFFT:
+		{
+			// size_t fftBlockIdx = floor(invjob.subPhase / invjob.nFFTSubSteps);
+			// size_t fftSampleStart = (invjob.subPhase % invjob.nFFTSubSteps) * invjob.nFFTSubStepDiv;
+			// size_t fftSampleEnd = fftSampleStart + invjob.nFFTSubStepDiv;
+			// Serial.printf("%u, %u, %u, %u\n", invjob.subPhase, fftBlockIdx, fftSampleStart, fftSampleEnd);
+			// Serial.printf("%d, ", fftSampleEnd);
+			// corefft.FFT_QD(&in_real[0], &in_img[0], &out_real[0], &out_img[0], fftBlockIdx, fftSampleStart, fftSampleEnd); 
+			// invjob.subPhase++;
+			// if (invjob.subPhase >= invjob.nFFTSteps) {
+			// 	// if (invjob.subPhase >= invjob.nFFTSteps * invjob.nFFTSubSteps) {
+			// 		invjob.qdPhase = InvPowerSpectrumJob::QD_PHASES::IFFTNORMALISE;
+			// 	// Serial.printf("\n");
+			// }
+			if (corefft.FFT_QD_B(&in_real[0], &in_img[0], &out_real[0], &out_img[0])) {
+				invjob.qdPhase = InvPowerSpectrumJob::QD_PHASES::IFFTNORMALISE;
+			}
+			break;
+		}
+		case InvPowerSpectrumJob::QD_PHASES::IFFTNORMALISE:
+			corefft.FFTNormalise(&out_real[0], &out_img[0]);
+			invjob.qdPhase = InvPowerSpectrumJob::QD_PHASES::IFFTWINDOWING;
+			break;
+		case InvPowerSpectrumJob::QD_PHASES::IFFTWINDOWING:
+			iFFTWindowing(invjob.start, invjob.sigout, invjob.window);
+			invjob.qdPhase = InvPowerSpectrumJob::QD_PHASES::DONE;
+			done=true;
+			break;
+		case InvPowerSpectrumJob::QD_PHASES::DONE:
+			break;
+	}
+	// invjob.timings.push_back(micros() - ts);
+	// if (done) {
+	// 	size_t total=0;
+	// 	Serial.printf("ps ts: ");
+	// 	for(auto &v: invjob.timings) {
+	// 		Serial.printf("%u ", v);
+	// 		total += v;
+	// 	}
+	// 	Serial.printf(":: total: %u (%u st)\n", total, invjob.timings.size());
+	// }
+	return done;
+}

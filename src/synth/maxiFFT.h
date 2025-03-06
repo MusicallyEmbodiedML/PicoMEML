@@ -37,9 +37,10 @@
 
 
 #include "qd_fft.h"
+#include "fft.h"
 #include "stddef.h"
 #include <vector>
-
+#include "Arduino.h"
 /**
  * Fast fourier transform. For spectral audio process and machine listening.
  */
@@ -108,6 +109,8 @@ public:
   int bins;
   float recalc;
   std::vector<float> & magsToDB();
+  bool firstBlockProcessed = false;
+
 
 };
 
@@ -140,7 +143,7 @@ public:
 	* \param mode see fftModes
 	* \returns the most recent sample an audio signal, creates from the inverse transform of the FFT data
 	*/
-  float process(std::vector<float> &data1, std::vector<float> &data2, fftModes mode = maxiIFFT::SPECTRUM);
+  float process(std::vector<float> &data1, std::vector<float> &data2, bool trigCalc, fftModes mode = maxiIFFT::SPECTRUM);
 	/*! \returns the number of fft bins */
   int getNumBins() { return bins; }
 
@@ -155,6 +158,7 @@ private:
 	float nextValue;
 	int fftSize;
 	qd_fft _fft;
+	bool startPlayback = false;
 };
 
 

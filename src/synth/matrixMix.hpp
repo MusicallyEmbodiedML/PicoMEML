@@ -111,11 +111,14 @@ public:
         params.resize(kN_synthparams);
         fft.setup(512,256,512);
         ifft.setup(512,256,512);
-        mags.resize(256);
+        mags.resize(256,0);
         mags2.resize(256);
-        phases.resize(256);
+        phases.resize(256,0);
         phases2.resize(256);
 
+        mags[2] = 10;
+        mags[10] = 20;
+        mags[4] = 4;
 
                 
     }
@@ -151,21 +154,33 @@ public:
         //     Serial.printf("v: %f, s: %f=%f, c: %f=%f\n", v, s, s2, c, c2);
         // }
         // )
+        float orgx = x;
+        bool newAnalysisReady=false;
+        // if (fft.process(x)) {
+            // tsfft=micros() - ts;
+            // Serial.printf("%f %u\n",fft.getMagnitudes()[3], frame);
 
-        if (fft.process(x)) {
-            tsfft=micros() - ts;
-            Serial.println(fft.getMagnitudes()[3]);
-
-            mags = fft.getMagnitudes();
-            phases = fft.getMagnitudes();
-        }
-        // ts = micros();
-        // x = ifft.process(mags, phases);
-        // if (ifft.newcalc) {
-        //     tsifft = micros() - ts;
-        //     // Serial.printf("ifft: %u\n", tsifft);
+        //     // mags = fft.getMagnitudes();
+        //     // phases = fft.getMagnitudes();
+        //     newAnalysisReady=true;
         // }
+        // ts = micros();
 
+        // x = ifft.process(mags, phases, newAnalysisReady);
+        if (frame % 256 == 0) {
+            phases[10] += 0.001;
+            phases[4] -= 0.0001;
+            // for(int i=1; i < 10; i++) {
+            //     mags[i] = mags[i-1];
+            // }
+            // mags[0] = mags[10];
+        }
+        x = ifft.process(mags, phases, frame % 256 == 0);
+        // PERIODIC_DEBUG(2987,
+        //     Serial.printf("%f, %f, %f\n",mags[3], phases[3], x);
+        // )
+
+        // x = orgx;
         // return x;
         // mmix.set(params);
         // const size_t ofs = NFX*NFX; //offset from mixer params
@@ -209,6 +224,7 @@ public:
         // x = fxOutputs[2];
         // x = fxOutputs[0] + fxOutputs[1] + fxOutputs[2] + fxOutputs[3];
         // // x = flanger.flange(flangeInput, params[ofs+4] * 6000 + 100, params[ofs+5] * 0.98, params[ofs+6] * 0.95f, params[ofs+7]);
+        frame++;
         return x;
     }
 
@@ -262,6 +278,9 @@ private:
     std::vector<float> mags2;
     std::vector<float> phases;
     std::vector<float> phases2;    
+
+    size_t frame=0;
+
 
 };
 
