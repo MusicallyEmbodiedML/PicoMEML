@@ -15,7 +15,7 @@ struct MIDIMessage {
 
 class MIDIDevice {
  public:
-    MIDIDevice(int rx_pin = uart_MidiRX, int tx_pin = uart_MidiTX);
+    MIDIDevice(int rx_pin, int tx_pin);
     void SendCC(size_t cc_index, int8_t val);
     void SendParamsAsCC(std::vector<float>params);
     MIDIMessage Read();

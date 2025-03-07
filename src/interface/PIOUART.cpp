@@ -4,7 +4,6 @@
 
 
 PIOUART::PIOUART(size_t baud_rate) :
-    serial_pio_(SerialPIO::NOPIN, uart_PIORx),
     slipBuffer{ 0 },
     filters_(),
 #if USE_SERIAL_ADCS
@@ -15,9 +14,9 @@ PIOUART::PIOUART(size_t baud_rate) :
     spiState(SPISTATES::WAITFOREND),
     spiIdx(0)
 {
-    pinMode(uart_PIOTx, OUTPUT);
-    pinMode(uart_PIORx, INPUT);
-    serial_pio_.begin(baud_rate);
+    Serial2.setRX(uart_SensorRx);
+    Serial2.setTX(uart_SensorTx);
+    Serial2.begin(baud_rate);
 
     // Put all values in the middle
     for (auto &v : value_states_) {
@@ -31,12 +30,12 @@ void PIOUART::Poll()
     uint8_t spiByte = 32;
 
  
-    while (serial_pio_.available()) {
-        spiByte = serial_pio_.read();
+    while (Serial2.available()) {
+        spiByte = Serial2.read();
 
         switch(spiState) {
             case SPISTATES::WAITFOREND:
-            //spiByte = serial_pio_.read();
+            //spiByte = Serial2.read();
             if (spiByte != -1) {
                 if (spiByte == SLIP::END) {
                     // Serial.println("end");
@@ -48,7 +47,7 @@ void PIOUART::Poll()
             }
             break;
             case ENDORBYTES:
-            //spiByte = serial_pio_.read();
+            //spiByte = Serial2.read();
             if (spiByte != -1) {
                 if (spiByte == SLIP::END) {
                     //this is the message start
@@ -62,7 +61,7 @@ void PIOUART::Poll()
             }
             break;
             case READBYTES:
-            //spiByte = serial_pio_.read();
+            //spiByte = Serial2.read();
             if (spiByte != -1) {
 
                 slipBuffer[spiIdx++] = spiByte;
@@ -79,7 +78,7 @@ void PIOUART::Poll()
             break;
         }  // switch(spiState)
 
-    }  // serial_pio_.available()
+    }  // Serial2.available()
 
     if (spiIdx >= static_cast<int>(kSlipBufferSize_)) {
         Serial.println("PIOUART- Buffer overrun!!!");
@@ -93,6 +92,10 @@ void PIOUART::Parse_(spiMessage msg)
     static const size_t kObservedChan = 0;
 
     if (msg.msg < value_states_.size()) {
+        // Protect against infs and nans
+        if (std::isnan(msg.value) || std::isinf(msg.value)) {
+            msg.value = value_states_[msg.msg];
+        }
         float filtered_value = filters_[msg.msg].process(msg.value);
         float prev_value = value_states_[msg.msg];
         if (std::abs(filtered_value - prev_value) > kEventThresh) {

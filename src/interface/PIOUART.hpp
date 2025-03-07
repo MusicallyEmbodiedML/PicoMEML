@@ -4,7 +4,6 @@
 
 #include "../PicoDefs.hpp"
 #include <Arduino.h>
-#include <SoftwareSerial.h>
 #include "../utils/MedianFilter.h"
 
 #include <array>
@@ -18,7 +17,6 @@ class PIOUART {
 
  protected:
     static const size_t kSlipBufferSize_ = 64;
-    SerialPIO serial_pio_;
     uint8_t slipBuffer[kSlipBufferSize_];
     std::array<MedianFilter<float>, kNExtraSensors> filters_;
     std::array<float, kNExtraSensors> value_states_;

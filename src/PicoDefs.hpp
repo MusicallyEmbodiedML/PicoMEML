@@ -17,11 +17,11 @@
 // Enable or disable joystick
 #define USE_JOYSTICK         1
 // Enable or disable extra sensors via UART
-#define USE_SERIAL_ADCS      0
+#define USE_SERIAL_ADCS      1
 // Set how many joystick params
 #define JOYSTICK_PARAMS      3
 // Set how many extra sensors
-#define SERIAL_ADC_PARAMS    1
+#define SERIAL_ADC_PARAMS    5
 
 const size_t kNJoystickParams = ((USE_JOYSTICK) ? JOYSTICK_PARAMS : 0);
 // Set how many extra sensors we want to process/use
@@ -36,14 +36,8 @@ enum PinConfig {
     i2c_sgt5000Data = 0,
     i2c_sgt5000Clk = 1,
     led_Training = 2,
-#if !EUCLIDEAN
-    uart_MidiTX = 4,
-    uart_MidiRX = 5,
-#else
-    uart_MidiTX = 18,
-    uart_MidiRX = 19,
-
-#endif
+    uart_SensorTx = 4,
+    uart_SensorRx = 5,
     i2s_pDIN = 6,
     i2s_pDOUT = 7,
     i2s_pBCLK = 8,
@@ -56,8 +50,8 @@ enum PinConfig {
     led_MIDI = 21,
     // button_ZoomOut = 18,
     // button_ZoomIn = 19,
-    uart_PIORx = 18,
-    uart_PIOTx = 19,
+    //uart_PIORx = 18,
+    //uart_PIOTx = 19,
     pot_JoystickX = 26,
     pot_JoystickY = 27,
     pot_JoystickZ = 28
