@@ -29,9 +29,9 @@
 #include "hardware/clocks.h"
 #include "hardware/structs/rosc.h"
 
-// #include "src/interface/MIDI.hpp"
+#include "src/interface/MIDI.hpp"
 
-// Core 0->1 comms
+//Core 0->1 comms
 const size_t kSharedMemSize = 1;
 volatile int32_t gSharedMem[kSharedMemSize] { -1 };
 mutex_t mutex_0to1;
@@ -88,6 +88,11 @@ uint32_t pico_get_random_bits(int num_bits) {
 
 
 void setup() {
+
+  Serial2.setRX(5);
+  Serial2.setTX(4);
+  Serial2.begin(115200);
+
 
 
     //wait for serial
@@ -148,7 +153,7 @@ void AUDIO_FUNC(loop)() {
     }
 }
 
-std::unique_ptr<PIOUART> pio_uart;
+// std::unique_ptr<PIOUART> pio_uart;
 
 void setup1() {
     // Init serial and signal other core
@@ -175,10 +180,10 @@ void setup1() {
             //  ,
             //  devmidi);
     // PIO UART
-    pio_uart = std::make_unique<PIOUART>();
+    // pio_uart = std::make_unique<PIOUART>();
     // Report how many input parameters are there
-    Serial.printf("Input params: %d (Joystick: %d, UART: %d).\n",
-            kNInputParams, kNJoystickParams, kNExtraSensors);
+    // Serial.printf("Input params: %d (Joystick: %d, UART: %d).\n",
+    //         kNInputParams, kNJoystickParams, kNExtraSensors);
 
     // Wait for init sync
     flag_init_1 = true;
@@ -191,7 +196,7 @@ void loop1() {
     // Read ADC
     ButtonsPots::Process();
     // Read PIO UART
-    pio_uart->Poll();
+    // pio_uart->Poll();
     // Perform parameter update if needed
     if (gTriggerParamUpdate) {
         meml_interface.UpdatePots();
