@@ -223,9 +223,19 @@ void loop1() {
         //Serial.println(".");
         std::vector<float> params;
         AnalysisParamsRead(params);
-        Serial.println(params[0]);
+        //Serial.println(params[0]);
     }
 #endif
 
     delay(period_ms);
+}
+
+
+extern "C" int getentropy (void * buffer, size_t how_many) {
+    uint8_t* pBuf = (uint8_t*) buffer;
+    while(how_many--) {
+        uint8_t rand_val = rp2040.hwrand32() % UINT8_MAX;
+        *pBuf++ = rand_val;
+    }
+    return 0; // return "no error". Can also do EFAULT, EIO, ENOSYS
 }
