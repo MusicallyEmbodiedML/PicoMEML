@@ -283,17 +283,25 @@ void mlp_pretrain_centre_()
         Serial.println("MLP- mlp_stored_output.size() == 0!");
         return;
     }
+    std::vector<float> single_feature(kNInputParams, 0.5f);
+    single_feature.push_back(1.f);  // with bias
     std::vector<std::vector<float>> features {
-        {0.5f, 0.5f, 0.5f, 1.}  // with bias
+        single_feature,
     };
     std::vector<std::vector<float>> labels {
         mlp_stored_output
     };
     MLP<float>::training_pair_t dataset(features, labels);
 
+    Serial.print("Feature input dim: ");
+    Serial.print(features[0].size());
+    Serial.print(", output dim: ");
+    Serial.println(labels[0].size());
+
     // Re-init weights
     mlp_[nn_n_]->DrawWeights();
     // Train with one point at centre
+    Serial.println("Training MLP on centre...");
     mlp_[nn_n_]->Train(dataset,
               1.,
               1000,

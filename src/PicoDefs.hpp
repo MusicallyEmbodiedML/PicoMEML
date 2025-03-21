@@ -5,8 +5,8 @@
 #include "interface/MEMLInterface.hpp"
 
 // Select which example app to run
-#define FM_SYNTH         1  ///< FM Synth (new macro)
-#define FX_PROCESSOR     0  ///< FX Processor (new macro)
+#define FM_SYNTH         0  ///< FM Synth (new macro)
+#define FX_PROCESSOR     1  ///< FX Processor (new macro)
 #define EUCLIDEAN        0
 
 

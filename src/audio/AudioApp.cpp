@@ -4,7 +4,7 @@
 #if FM_SYNTH
 #include "../synth/FMSynth.hpp"
 #elif FX_PROCESSOR
-#include "../synth/matrixMix.hpp"
+#include "../synth/BuntyFX.hpp"
 #elif EUCLIDEAN
 #include "../synth/EuclideanSeq.hpp"
 #endif
@@ -16,7 +16,7 @@
 #if FM_SYNTH
 static AUDIO_MEM FMSynth fm_synth_(kSampleRate);
 #elif FX_PROCESSOR
-static AUDIO_MEM MaxtrixMixApp multi_fx_app_(kSampleRate);
+static AUDIO_MEM BuntyFXApp multi_fx_app_(kSampleRate);
 #elif EUCLIDEAN
 static AUDIO_MEM EuclideanSeqApp euclideanApp;
 #endif  // FM_SYNTH

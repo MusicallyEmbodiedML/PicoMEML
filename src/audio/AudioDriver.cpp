@@ -188,9 +188,9 @@ bool AudioDriver_Output::Setup() {
 
     // init i2c
     codecCtl.enable();
-    codecCtl.volume(0.8);
+    codecCtl.volume(0.99);
     codecCtl.inputSelect(AUDIO_INPUT_LINEIN);
-    codecCtl.lineInLevel(7);
+    codecCtl.lineInLevel(5);
 
 
     return true;

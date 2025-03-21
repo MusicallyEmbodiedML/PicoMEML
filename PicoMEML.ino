@@ -8,7 +8,7 @@
 #if FM_SYNTH
 #include "src/synth/FMSynth.hpp"
 #elif FX_PROCESSOR
-#include "src/synth/matrixMix.hpp"
+#include "src/synth/BuntyFX.hpp"
 #elif EUCLIDEAN
 #include "src/synth/EuclideanSeq.hpp"
 #endif  
@@ -66,7 +66,7 @@ MEMLInterface meml_interface(
 #if FM_SYNTH
     &FMSynth::GenParams,
 #elif FX_PROCESSOR
-    &MaxtrixMixApp::GenParams,
+    &BuntyFXApp::GenParams,
 #elif EUCLIDEAN
     &EuclideanSeqApp::GenParams,
 #endif  // FM_SYNTH
@@ -218,7 +218,7 @@ void loop1() {
         //Serial.println(".");
         std::vector<float> params;
         AnalysisParamsRead(params);
-        //Serial.println(params[0]);
+        Serial.println(params[0]);
     }
 #endif
 

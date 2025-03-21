@@ -89,7 +89,7 @@ void PIOUART::Poll()
 void PIOUART::Parse_(spiMessage msg)
 {
     static const float kEventThresh = 0.01;
-    static const size_t kObservedChan = 0;
+    static const size_t kObservedChan = 9999;
 
     if (msg.msg < value_states_.size()) {
         // Protect against infs and nans
