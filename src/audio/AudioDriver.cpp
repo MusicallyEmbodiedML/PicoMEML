@@ -14,16 +14,16 @@
 #define PASSTHROUGH   0
 
 
-const int AUDIO_MEM sampleRate = kSampleRate; // minimum for many i2s DACs
-const int AUDIO_MEM bitsPerSample = 32;
+static const int AUDIO_MEM sampleRate = kSampleRate; // minimum for many i2s DACs
+static const int AUDIO_MEM bitsPerSample = 32;
 
-const float AUDIO_MEM amplitude = 1 << (bitsPerSample - 2); // amplitude of square wave = 1/2 of maximum
-const float AUDIO_MEM neg_amplitude = -amplitude; // amplitude of square wave = 1/2 of maximum
-const float AUDIO_MEM one_over_amplitude = 1.f / amplitude;
+static const float AUDIO_MEM amplitude = 1 << (bitsPerSample - 2); // amplitude of square wave = 1/2 of maximum
+static const float AUDIO_MEM neg_amplitude = -amplitude; // amplitude of square wave = 1/2 of maximum
+static const float AUDIO_MEM one_over_amplitude = 1.f / amplitude;
 
-int32_t AUDIO_MEM sample = amplitude; // current sample value
+static int32_t AUDIO_MEM_2 sample = amplitude; // current sample value
 
-AudioControlSGTL5000 codecCtl;
+static AudioControlSGTL5000 codecCtl;
 
 audiocallback_fptr_t audio_callback_;
 

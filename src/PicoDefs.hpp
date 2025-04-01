@@ -6,12 +6,14 @@
 
 // Select which example app to run
 #define FM_SYNTH         0  ///< FM Synth (new macro)
-#define FX_PROCESSOR     1  ///< FX Processor (new macro)
+#define FX_PROCESSOR     0  ///< FX Processor (new macro)
 #define EUCLIDEAN        0
+#define DAISY            1
 
 
 #define AUDIO_FUNC(x)    __not_in_flash_func(x)  ///< Macro to make audio function load from mem
 #define AUDIO_MEM    __not_in_flash("audio")  ///< Macro to make variable load from mem
+#define AUDIO_MEM_2  __not_in_flash("audio2")
 
 
 // Enable or disable joystick
@@ -51,7 +53,7 @@ enum PinConfig {
     // button_ZoomOut = 18,
     // button_ZoomIn = 19,
     //uart_PIORx = 18,
-    //uart_PIOTx = 19,
+    uart_DaisyPIOTx = 19,
     pot_JoystickX = 26,
     pot_JoystickY = 27,
     pot_JoystickZ = 28

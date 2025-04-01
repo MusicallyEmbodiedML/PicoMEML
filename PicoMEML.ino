@@ -11,7 +11,9 @@
 #include "src/synth/BuntyFX.hpp"
 #elif EUCLIDEAN
 #include "src/synth/EuclideanSeq.hpp"
-#endif  
+#elif DAISY
+#include "src/interface/DaisyUARTSend.hpp"
+#endif
 
 #include "src/interface/MEMLInterface.hpp"
 #include "src/interface/mlp_task.hpp"
@@ -69,7 +71,9 @@ MEMLInterface meml_interface(
     &BuntyFXApp::GenParams,
 #elif EUCLIDEAN
     &EuclideanSeqApp::GenParams,
-#endif  // FM_SYNTH
+#elif DAISY
+    nullptr,
+#endif
     kNInputParams,
     kN_synthparams
 );
