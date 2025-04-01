@@ -199,10 +199,11 @@ void mlp_draw(float speed)
         mlp_trigger_redraw_();
         flag_zoom_in_ = false;
     }
-    if (redraw_weights_) {
+    //if (redraw_weights_) {
         mlp_[nn_n_]->DrawWeights();
         Serial.println("MLP- Weights randomised.");
-        redraw_weights_ = false;
+        //redraw_weights_ = false;
+#if 0
     } else {
         if (gAppState.current_expl_mode == expl_mode_zoom) {
 
@@ -238,6 +239,7 @@ void mlp_draw(float speed)
 
         }
     }
+#endif
 }
 
 void mlp_add_data_point(const std::vector<float> &in, const std::vector<float> &out)

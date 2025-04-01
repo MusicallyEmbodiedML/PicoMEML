@@ -15,13 +15,13 @@
 
 
 // Enable or disable joystick
-#define USE_JOYSTICK         1
+#define USE_JOYSTICK         0
 // Enable or disable extra sensors via UART
 #define USE_SERIAL_ADCS      1
 // Set how many joystick params
 #define JOYSTICK_PARAMS      3
 // Set how many extra sensors
-#define SERIAL_ADC_PARAMS    5
+#define SERIAL_ADC_PARAMS    3
 
 const size_t kNJoystickParams = ((USE_JOYSTICK) ? JOYSTICK_PARAMS : 0);
 // Set how many extra sensors we want to process/use
