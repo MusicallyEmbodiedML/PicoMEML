@@ -3,6 +3,7 @@
 #include "../mlp/Data.h"
 #include "../mlp/Dataset.hpp"
 #include "../utils/PrintVector.hpp"
+#include "../interface/DaisyUARTSend.hpp"
 
 #include <algorithm>
 #include <cmath>
@@ -23,6 +24,7 @@ static void mlp_load_all_();
 static void mlp_save_all_();
 static void mlp_pretrain_centre_();
 
+static std::unique_ptr<DaisyUARTSend> daisy_uart_;
 
 // MLP config constants
 static const unsigned int kBias = 1;
@@ -64,6 +66,7 @@ std::deque<float> inputRB; //ring buffer for inputs. Maybe a more efficient way 
 void mlp_init(queue_t *nn_paramupdate, size_t n_inputs, size_t n_params, size_t n_inputbuffer, std::shared_ptr<MIDIDevice> _midiDev)
 {
     Serial.printf("MLP- Initialise with: %d -> %d\n", n_inputs, n_params);
+    daisy_uart_ = std::make_unique<DaisyUARTSend>(uart_DaisyPIOTx);
 
     n_inputs *= n_inputbuffer;
     // fill up a ring buffer
@@ -398,10 +401,11 @@ void mlp_inference(input_data_t joystick_read) {
     mlp_stored_output = output;
 
     // Send result
-    queue_try_add(
-        nn_paramupdate_,
-        reinterpret_cast<void *>(mlp_stored_output.data())
-    );
+    // queue_try_add(
+    //     nn_paramupdate_,
+    //     reinterpret_cast<void *>(mlp_stored_output.data())
+    // );
+    daisy_uart_->SendParams(mlp_stored_output);
 
     // Send MIDI
     // midi_->SendParamsAsCC(mlp_stored_output);

@@ -52,6 +52,8 @@ public:
         Serial.print(params[0], 5);
         Serial.print(", ");
         Serial.print(params[params.size()-1], 5);
+        Serial.print(" ");
+        Serial.print(params.size());
         Serial.println("");
     }
 
@@ -89,7 +91,7 @@ private:
 };
 
 
-const size_t kN_synthparams = 10;
+const size_t kN_synthparams = 3;
 
 
 #endif  // __DAISY_UART_SEND_HPP__

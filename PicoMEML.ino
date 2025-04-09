@@ -108,14 +108,14 @@ void setup() {
     AnalysisParamsSetup(kAudioApp_NAnalysisParams);
 
     // AUDIO routine setup
-    if (!AudioDriver_Output::Setup()) {
-        Serial.println("setup - I2S init failed!");
-    }
+    // if (!AudioDriver_Output::Setup()) {
+    //     Serial.println("setup - I2S init failed!");
+    // }
     AudioAppSetup();
     // I2S callback is last
     AudioDriver_Output::SetCallback(&AudioAppProcess);
     // Wait for init sync
-    Serial.println("Audio running");
+    Serial.println("Audio not running (disabled)");
     flag_init_0 = true;
 
 
@@ -126,16 +126,16 @@ void setup() {
 
 void AUDIO_FUNC(loop)() {
 
-    {
-        // Audio parameter queue receiver:
-        // From interface/mlp_task.cpp and interface/MEMLInterface.cpp
-        // on core 1
-        std::vector<float> audio_params(kN_synthparams);
-        if (queue_try_remove(&queue_audioparam, audio_params.data())) {
-            //Serial.println(".");
-            AudioAppSetParams(audio_params);
-        }
-    }
+    // {
+    //     // Audio parameter queue receiver:
+    //     // From interface/mlp_task.cpp and interface/MEMLInterface.cpp
+    //     // on core 1
+    //     std::vector<float> audio_params(kN_synthparams);
+    //     if (queue_try_remove(&queue_audioparam, audio_params.data())) {
+    //         //Serial.println(".");
+    //         AudioAppSetParams(audio_params);
+    //     }
+    // }
 
     {
         float pulse;

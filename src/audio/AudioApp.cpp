@@ -8,7 +8,7 @@
 #elif EUCLIDEAN
 #include "../synth/EuclideanSeq.hpp"
 #elif DAISY
-#include "../interface/DaisyUARTSend.hpp"
+//#include "../interface/DaisyUARTSend.hpp"
 #endif
 #include <vector>
 #include <cmath>
@@ -23,20 +23,20 @@ static AUDIO_MEM BuntyFXApp multi_fx_app_(kSampleRate);
 #elif EUCLIDEAN
 static AUDIO_MEM EuclideanSeqApp euclideanApp;
 #elif DAISY
-static std::unique_ptr<DaisyUARTSend> daisy_uart_;
+//static std::unique_ptr<DaisyUARTSend> daisy_uart_;
 #endif
 
 
 void AudioAppSetup(void)
 {
-#if FM_SYNTH
-maxiSettings::setup(kSampleRate, 1, 64);
-fm_synth_.EnableMIDI(false);
-#elif EUCLIDEAN
-euclideanApp.init(kSampleRate);
-#elif DAISY
-daisy_uart_ = std::make_unique<DaisyUARTSend>(uart_DaisyPIOTx);
-#endif
+    #if FM_SYNTH
+    maxiSettings::setup(kSampleRate, 1, 64);
+    fm_synth_.EnableMIDI(false);
+    #elif EUCLIDEAN
+    euclideanApp.init(kSampleRate);
+    #elif DAISY
+    //daisy_uart_ = std::make_unique<DaisyUARTSend>(uart_DaisyPIOTx);
+    #endif
 }
 
 size_t count=0;
@@ -72,6 +72,6 @@ void AudioAppSetParams(std::vector<float> &params)
 #elif EUCLIDEAN
     euclideanApp.mapParameters(params);    
 #elif DAISY
-    daisy_uart_->SendParams(params);
+    //daisy_uart_->SendParams(params);
 #endif
 }

@@ -4,6 +4,10 @@
 #include "common/common_defs.h"
 #include "interface/MEMLInterface.hpp"
 
+// Select which hardware board
+#define MEMLNAUT   1
+#define PIPICO     !(MEMLNAUT)
+
 // Select which example app to run
 #define FM_SYNTH         0  ///< FM Synth (new macro)
 #define FX_PROCESSOR     0  ///< FX Processor (new macro)
@@ -23,7 +27,7 @@
 // Set how many joystick params
 #define JOYSTICK_PARAMS      3
 // Set how many extra sensors
-#define SERIAL_ADC_PARAMS    3
+#define SERIAL_ADC_PARAMS    2
 
 const size_t kNJoystickParams = ((USE_JOYSTICK) ? JOYSTICK_PARAMS : 0);
 // Set how many extra sensors we want to process/use
@@ -31,8 +35,53 @@ const size_t kNExtraSensors = ((USE_SERIAL_ADCS) ? SERIAL_ADC_PARAMS : 0);
 
 const size_t kNInputParams = kNJoystickParams + kNExtraSensors;
 
+#if MEMLNAUT
 /**
- * @brief Pin configuration on the Pi Pico 2
+ * @brief Pin configuration on the MEMLNaut
+ */
+enum PinConfig {
+    i2c_sgt5000Data = 0,
+    i2c_sgt5000Clk = 1,
+    led_Training = 2,
+    uart_MIDITx = 4,
+    uart_MIDIRx = 5,
+    i2s_pDIN = 6,
+    i2s_pDOUT = 7,
+    i2s_pBCLK = 8,
+    i2s_pWS = 9,
+    i2s_pMCLK = 10,
+    toggle_SaveData = 32,
+    button_Randomise = 14,
+    toggle_Training = 15,
+    button_ClearData = 16,
+    led_MIDI = 21,
+    // button_ZoomOut = 18,
+    // button_ZoomIn = 19,
+    //uart_PIORx = 18,
+    uart_DaisyPIOTx = 33,
+    uart_SensorTx = 36,
+    uart_SensorRx = 37,
+    pot_JoystickX = 40,
+    pot_JoystickY = 41,
+    pot_JoystickZ = 42
+
+#ifdef EUCLIDEAN
+    ,
+    pulse0=20,
+    pulse1=21,
+    pulse2=12,
+    pulse3=11,
+    pulse4=3,
+    pulse5=4,
+    pulse6=5
+#endif    
+};
+
+#endif  // MEMLNAUT
+
+#if PIPICO
+/**
+ * @brief Pin configuration on the PIPICO
  */
 enum PinConfig {
     i2c_sgt5000Data = 0,
@@ -70,6 +119,7 @@ enum PinConfig {
 #endif    
 };
 
+#endif  // PIPICO
 
 // Global objects
 /** Global app state container (define only once). */
