@@ -97,7 +97,7 @@ void MEMLInterface::UpdatePots()
 void MEMLInterface::SetPulse(int32_t pulse)
 {
     if (pulse_on_) {
-        queue_try_add(interface_pulse_, &pulse);
+        //queue_try_add(interface_pulse_, &pulse);
     }
 }
 
@@ -121,29 +121,9 @@ void MEMLInterface::SetToggleButton(te_button_idx button_n, int8_t state)
 
         case button_randomise: {
             if (gAppState.current_nn_mode == mode_training) {
-#if 0  // Legacy randomiser-randomise the parameters directly
-                // Generate random params
-                std::vector<float> rand_params(nn_output_size_);
-                if (gen_params_fn_ptr_) {
-                    gen_params_fn_ptr_(rand_params);
-                } else {
-                    Serial.println("INTF- Param randomiser is null");
-                    break;
-                }
-
-                // Send them down to fmsynth
-                queue_try_add(
-                    interface_fmsynth_,
-                    reinterpret_cast<void *>(rand_params.data())
-                );
-
-                // Also save them in an intermediate space
-                current_fmsynth_params_ = std::move(rand_params);
-                Serial.println("INTF- Random params");
-#else
+                // Randomise through MLP
                 mlp_draw(draw_speed_);
                 mlp_inference(joystick_current_);
-#endif
             }
         } break;
 
@@ -214,9 +194,9 @@ void MEMLInterface::SetToggleButton(te_button_idx button_n, int8_t state)
 void MEMLInterface::SendMIDI(ts_midi_note midi_note)
 {
     if (midi_on_) {
-        queue_try_add(
-            interface_midi_,
-            reinterpret_cast<void *>(&midi_note)
-        );
+        // queue_try_add(
+        //     interface_midi_,
+        //     reinterpret_cast<void *>(&midi_note)
+        // );
     }
 }

@@ -1,8 +1,8 @@
 #include <MIDI.h>
 
 #include "src/PicoDefs.hpp"
-#include "src/audio/AudioDriver.hpp"
-#include "src/audio/AudioApp.hpp"
+// #include "src/audio/AudioDriver.hpp"
+// #include "src/audio/AudioApp.hpp"
 #include "src/interface/ButtonsPots.hpp"
 #include "src/common/common_defs.h"
 #if FM_SYNTH
@@ -23,8 +23,8 @@
 #include <memory>
 
 
-#include "pico/util/queue.h"
-#include "src/audio/AnalysisParams.hpp"
+// #include "pico/util/queue.h"
+// #include "src/audio/AnalysisParams.hpp"
 #include "src/interface/PIOUART.hpp"
 
 //for random bits
@@ -34,14 +34,14 @@
 // #include "src/interface/MIDI.hpp"
 
 // Core 0->1 comms
-const size_t kSharedMemSize = 1;
-volatile int32_t gSharedMem[kSharedMemSize] { -1 };
-mutex_t mutex_0to1;
-static queue_t queue_audioparam;
-static queue_t queue_interface_pulse;
-static queue_t queue_interface_midi;
-static volatile bool flag_init_0 = false;
-static volatile bool flag_init_1 = false;
+// const size_t kSharedMemSize = 1;
+// volatile int32_t gSharedMem[kSharedMemSize] { -1 };
+// mutex_t mutex_0to1;
+// static queue_t queue_audioparam;
+// static queue_t queue_interface_pulse;
+// static queue_t queue_interface_midi;
+// static volatile bool flag_init_0 = false;
+// static volatile bool flag_init_1 = false;
 
 const bool waitForSerialOnStart = false;
 
@@ -62,9 +62,9 @@ bool gTriggerParamUpdate = false;
 
 // Global objects
 MEMLInterface meml_interface(
-    &queue_audioparam,
-    &queue_interface_pulse,
-    &queue_interface_midi,
+    nullptr,
+    nullptr,
+    nullptr,
 #if FM_SYNTH
     &FMSynth::GenParams,
 #elif FX_PROCESSOR
@@ -91,80 +91,80 @@ uint32_t pico_get_random_bits(int num_bits) {
 }
 
 
-void setup() {
+// void setup() {
 
 
-    //wait for serial
-    if (waitForSerialOnStart){
-        while(!Serial) {;}
-    }
-    uint32_t seed = pico_get_random_bits(32);
-    // Print the generated seed
-    //Serial.printf("Generated Random Seed: %u\n", seed);
-    // Seed the standard PRNG
-    srand(seed);
+//     //wait for serial
+//     if (waitForSerialOnStart){
+//         while(!Serial) {;}
+//     }
+//     uint32_t seed = pico_get_random_bits(32);
+//     // Print the generated seed
+//     //Serial.printf("Generated Random Seed: %u\n", seed);
+//     // Seed the standard PRNG
+//     srand(seed);
 
-    // Set up the mutex;
-    AnalysisParamsSetup(kAudioApp_NAnalysisParams);
+//     // Set up the mutex;
+//     AnalysisParamsSetup(kAudioApp_NAnalysisParams);
 
-    // AUDIO routine setup
-    // if (!AudioDriver_Output::Setup()) {
-    //     Serial.println("setup - I2S init failed!");
-    // }
-    AudioAppSetup();
-    // I2S callback is last
-    AudioDriver_Output::SetCallback(&AudioAppProcess);
-    // Wait for init sync
-    Serial.println("Audio not running (disabled)");
-    flag_init_0 = true;
+//     // AUDIO routine setup
+//     // if (!AudioDriver_Output::Setup()) {
+//     //     Serial.println("setup - I2S init failed!");
+//     // }
+//     AudioAppSetup();
+//     // I2S callback is last
+//     AudioDriver_Output::SetCallback(&AudioAppProcess);
+//     // Wait for init sync
+//     Serial.println("Audio not running (disabled)");
+//     flag_init_0 = true;
 
 
-    while (!flag_init_1) {
-        // Wait for other core
-    };
-}
+//     while (!flag_init_1) {
+//         // Wait for other core
+//     };
+// }
 
-void AUDIO_FUNC(loop)() {
+// void AUDIO_FUNC(loop)() {
 
-    // {
-    //     // Audio parameter queue receiver:
-    //     // From interface/mlp_task.cpp and interface/MEMLInterface.cpp
-    //     // on core 1
-    //     std::vector<float> audio_params(kN_synthparams);
-    //     if (queue_try_remove(&queue_audioparam, audio_params.data())) {
-    //         //Serial.println(".");
-    //         AudioAppSetParams(audio_params);
-    //     }
-    // }
+//     // {
+//     //     // Audio parameter queue receiver:
+//     //     // From interface/mlp_task.cpp and interface/MEMLInterface.cpp
+//     //     // on core 1
+//     //     std::vector<float> audio_params(kN_synthparams);
+//     //     if (queue_try_remove(&queue_audioparam, audio_params.data())) {
+//     //         //Serial.println(".");
+//     //         AudioAppSetParams(audio_params);
+//     //     }
+//     // }
 
-    {
-        float pulse;
-        if (queue_try_remove(&queue_interface_pulse, &pulse)) {
-            Serial.println("A- Pulse received.");
-        }
-    }
+//     {
+//         float pulse;
+//         if (queue_try_remove(&queue_interface_pulse, &pulse)) {
+//             Serial.println("A- Pulse received.");
+//         }
+//     }
 
-    {
-        ts_midi_note midi;
-        if (queue_try_remove(&queue_interface_midi, &midi)) {
-            Serial.println("A- MIDI received.");
-        }
-    }
-}
+//     {
+//         ts_midi_note midi;
+//         if (queue_try_remove(&queue_interface_midi, &midi)) {
+//             Serial.println("A- MIDI received.");
+//         }
+//     }
+// }
 
 std::unique_ptr<PIOUART> pio_uart;
 
-void setup1() {
+void setup() {
     // Init serial and signal other core
     if (waitForSerialOnStart){
         while(!Serial) {;}
     }
     // devmidi = make_shared<MIDIDevice>();
-    Serial.println("Core 1 Start");
+    Serial.println("Core 0 Start");
     // Core INTERFACE routine setup
-    queue_init(&queue_audioparam, sizeof(float)*kN_synthparams, 1);
-    queue_init(&queue_interface_pulse, sizeof(float), 1);
-    queue_init(&queue_interface_midi, sizeof(ts_midi_note), 1);
+    // queue_init(&queue_audioparam, sizeof(float)*kN_synthparams, 1);
+    // queue_init(&queue_interface_pulse, sizeof(float), 1);
+    // queue_init(&queue_interface_midi, sizeof(ts_midi_note), 1);
     // GPIO/ADC setup
     ButtonsPots::Setup(true);
     for (auto &out_pin : { led_Training, led_MIDI }) {
@@ -172,7 +172,8 @@ void setup1() {
     }
     Serial.println("Input Pins Set");
     // MLP setup
-    mlp_init(&queue_audioparam,
+//    mlp_init(&queue_audioparam,
+    mlp_init(nullptr,
              kNInputParams,
              kN_synthparams,
              1);
@@ -185,13 +186,13 @@ void setup1() {
             kNInputParams, kNJoystickParams, kNExtraSensors);
 
     // Wait for init sync
-    flag_init_1 = true;
-    while (!flag_init_0) {
-        // Wait for other core
-    };
+    // flag_init_1 = true;
+    // while (!flag_init_0) {
+    //     // Wait for other core
+    // };
 }
 
-void loop1() {
+void loop() {
     // Read ADC
     ButtonsPots::Process();
     // Read PIO UART
@@ -219,10 +220,10 @@ void loop1() {
     counter++;
     if (counter >= count_wraparound) {
         counter = 0;
-        //Serial.println(".");
-        std::vector<float> params;
-        AnalysisParamsRead(params);
-        Serial.println(params[0]);
+        Serial.println(".");
+        //std::vector<float> params;
+        //AnalysisParamsRead(params);
+        //Serial.println(params[0]);
     }
 #endif
 
